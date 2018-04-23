@@ -23,8 +23,8 @@
     -->
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="MyToolWindow" anchor="bottom"
-                    factoryClass="MyToolWindowFactory"/>
+        <toolWindow id="DiffToolWindow" anchor="bottom"
+                    factoryClass="DiffToolWindowFactory"/>
     </extensions>
 
     <actions>

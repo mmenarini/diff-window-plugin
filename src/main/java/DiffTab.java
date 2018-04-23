@@ -1,5 +1,4 @@
 import com.intellij.diff.DiffContentFactory;
-import com.intellij.diff.DiffManager;
 import com.intellij.diff.DiffRequestPanel;
 import com.intellij.diff.contents.DocumentContent;
 import com.intellij.diff.requests.SimpleDiffRequest;
@@ -15,45 +14,54 @@ import javax.swing.*;
 import java.awt.*;
 
 public class DiffTab {
-    //    has panel
-//    has content
-//    panel and content have a disposable
     private String title;
     private Content content;
 
-    public DiffTab(String title, Content content) {
+    private PanelFactory panelFactory;
+
+    public DiffTab(String title, String diffOld, String diffNew, PanelFactory panelFactory) {
         this.title = title;
-        this.content = content;
+        this.panelFactory = panelFactory;
+        this.updateTab(diffOld, diffNew);
     }
 
     public void updateTab(String diffOld, String diffNew) {
-//        creating panel for diff
-        JPanel panel = new JPanel(new BorderLayout());
+//        create diff
+        SimpleDiffRequest diffRequest = createDiffRequest(diffOld, diffNew);
+        Disposable disposable = Disposer.newDisposable();
+        DiffRequestPanel diffPanel = createDiffPanel(diffRequest, disposable);
+        JPanel panel = createPanel(diffPanel);
 
-//        creating a diff
-        DiffContentFactory contentFactory = DiffContentFactory.getInstance();
-
-        DocumentContent oldContent = contentFactory.create("pre\ncontent");
-        DocumentContent newContent = contentFactory.create("post\ncontent\nnew line");
-
-        SimpleDiffRequest diffRequest = new SimpleDiffRequest("Diff", oldContent, newContent, "Before", "After");
-
-
-//        need to manage the disposables creation and destroy
-        Disposable myDis = Disposer.newDisposable();
-        DiffRequestPanel diffPanel = DiffManager.getInstance().createRequestPanel(project, myDis,null);
-
-        diffPanel.putContextHints(DiffUserDataKeys.PLACE, "ExtractSignature");
-        diffPanel.setRequest(diffRequest);
-
-//        add diff to panel
-        panel.add(diffPanel.getComponent(), BorderLayout.CENTER);
-        panel.setBorder(IdeBorderFactory.createEmptyBorder(JBUI.insetsTop(5)));
-
-
-//        create new content
+//        create new content for tab
+        if (this.content != null) {
+            this.content.dispose();
+        }
         this.content = ContentFactory.SERVICE.getInstance().
                 createContent(panel, this.title, false);
+        content.setDisposer(disposable);
+    }
+
+    private DiffRequestPanel createDiffPanel(SimpleDiffRequest diffRequest, Disposable disposable) {
+        DiffRequestPanel diffPanel = panelFactory.createDiffRequestPanel(disposable);
+        diffPanel.putContextHints(DiffUserDataKeys.PLACE, "ExtractSignature");
+        diffPanel.setRequest(diffRequest);
+        return diffPanel;
+    }
+
+    private JPanel createPanel(DiffRequestPanel diffPanel) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(diffPanel.getComponent(), BorderLayout.CENTER);
+        panel.setBorder(IdeBorderFactory.createEmptyBorder(JBUI.insetsTop(5)));
+        return panel;
+    }
+
+    private SimpleDiffRequest createDiffRequest(String diffOld, String diffNew) {
+        DiffContentFactory contentFactory = DiffContentFactory.getInstance();
+
+        DocumentContent oldContent = contentFactory.create(diffOld);
+        DocumentContent newContent = contentFactory.create(diffNew);
+
+        return new SimpleDiffRequest(title, oldContent, newContent, "Before", "After");
     }
 
     public Content getContent() {
