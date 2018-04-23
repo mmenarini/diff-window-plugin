@@ -23,6 +23,8 @@
     -->
 
     <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="MyToolWindow" anchor="bottom"
+                    factoryClass="MyToolWindowFactory"/>
     </extensions>
 
     <actions>
