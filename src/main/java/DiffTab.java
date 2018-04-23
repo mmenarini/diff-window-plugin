@@ -5,27 +5,28 @@ import com.intellij.diff.contents.DocumentContent;
 import com.intellij.diff.requests.SimpleDiffRequest;
 import com.intellij.diff.util.DiffUserDataKeys;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.util.ui.JBUI;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class MyToolWindowFactory implements ToolWindowFactory {
-    private ToolWindow myToolWindow;
+public class DiffTab {
+    //    has panel
+//    has content
+//    panel and content have a disposable
+    private String title;
+    private Content content;
 
-    @Override
-    public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-//        creating tool window
-        myToolWindow = toolWindow;
+    public DiffTab(String title, Content content) {
+        this.title = title;
+        this.content = content;
+    }
 
+    public void updateTab(String diffOld, String diffNew) {
 //        creating panel for diff
         JPanel panel = new JPanel(new BorderLayout());
 
@@ -35,7 +36,7 @@ public class MyToolWindowFactory implements ToolWindowFactory {
         DocumentContent oldContent = contentFactory.create("pre\ncontent");
         DocumentContent newContent = contentFactory.create("post\ncontent\nnew line");
 
-        SimpleDiffRequest request = new SimpleDiffRequest("Diff", oldContent, newContent, "Before", "After");
+        SimpleDiffRequest diffRequest = new SimpleDiffRequest("Diff", oldContent, newContent, "Before", "After");
 
 
 //        need to manage the disposables creation and destroy
@@ -43,16 +44,23 @@ public class MyToolWindowFactory implements ToolWindowFactory {
         DiffRequestPanel diffPanel = DiffManager.getInstance().createRequestPanel(project, myDis,null);
 
         diffPanel.putContextHints(DiffUserDataKeys.PLACE, "ExtractSignature");
-        diffPanel.setRequest(request);
+        diffPanel.setRequest(diffRequest);
 
 //        add diff to panel
         panel.add(diffPanel.getComponent(), BorderLayout.CENTER);
         panel.setBorder(IdeBorderFactory.createEmptyBorder(JBUI.insetsTop(5)));
 
 
-//        add panel to tool window
-        Content content = ContentFactory.SERVICE.getInstance().
-                createContent(panel, "My Title", false);
-        myToolWindow.getContentManager().addContent(content);
+//        create new content
+        this.content = ContentFactory.SERVICE.getInstance().
+                createContent(panel, this.title, false);
+    }
+
+    public Content getContent() {
+        return this.content;
+    }
+
+    public String getTitle() {
+        return title;
     }
 }
