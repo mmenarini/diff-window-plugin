@@ -1,6 +1,9 @@
+package edu.ucsd.diff;
+
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
+import edu.ucsd.factory.PanelFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

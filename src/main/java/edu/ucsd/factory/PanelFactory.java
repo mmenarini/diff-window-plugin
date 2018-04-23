@@ -1,3 +1,5 @@
+package edu.ucsd.factory;
+
 import com.intellij.diff.DiffManager;
 import com.intellij.diff.DiffRequestPanel;
 import com.intellij.openapi.Disposable;

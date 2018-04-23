@@ -1,3 +1,5 @@
+package edu.ucsd.diff;
+
 import com.intellij.openapi.wm.ToolWindow;
 import lombok.extern.java.Log;
 

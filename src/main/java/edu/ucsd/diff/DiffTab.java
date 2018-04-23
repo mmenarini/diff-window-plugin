@@ -1,3 +1,5 @@
+package edu.ucsd.diff;
+
 import com.intellij.diff.DiffContentFactory;
 import com.intellij.diff.DiffRequestPanel;
 import com.intellij.diff.contents.DocumentContent;
@@ -9,6 +11,7 @@ import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.util.ui.JBUI;
+import edu.ucsd.factory.PanelFactory;
 
 import javax.swing.*;
 import java.awt.*;
