@@ -6,6 +6,7 @@ import lombok.extern.java.Log;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Log
 public class DiffWindow {
@@ -41,5 +42,9 @@ public class DiffWindow {
         } else {
             log.info(String.format("No tab found with title \"%s\".", title));
         }
+    }
+
+    public Optional<DiffTab> getTab(String title) {
+        return Optional.ofNullable(tabsMap.get(title));
     }
 }
