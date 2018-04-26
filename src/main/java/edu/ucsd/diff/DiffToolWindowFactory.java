@@ -1,11 +1,15 @@
 package edu.ucsd.diff;
 
+import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.editor.event.CaretListener;
+import com.intellij.openapi.editor.event.EditorEventMulticaster;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import edu.ucsd.FileReader;
 import edu.ucsd.factory.PanelFactory;
 import edu.ucsd.getty.GettyInvariantsFilesRetriever;
+import edu.ucsd.idea.MyCaretListener;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.PropertyConfigurator;
 import org.jetbrains.annotations.NotNull;
@@ -51,5 +55,16 @@ public class DiffToolWindowFactory implements ToolWindowFactory {
         tabsList.add(new DiffTab("Test tab", "pre\ncontent", "post\ncontent\nnew line", panelFactory));
         tabsList.add(new DiffTab("Test tab 2", "", "", panelFactory));
         this.diffWindow = new DiffWindow(toolWindow, tabsList);
+
+
+//        listener
+        CaretListener caretListener = new MyCaretListener();
+
+        EditorEventMulticaster eventMulticaster = EditorFactory.getInstance().getEventMulticaster();
+        eventMulticaster.addCaretListener(caretListener);
+
+        log.warn("created caret listener");
+
+
     }
 }
