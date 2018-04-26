@@ -30,7 +30,8 @@ public class GettyInvariantsFilesRetrieverTest {
 
     @Before
     public void setUp() throws Exception {
-        PropertyConfigurator.configure("log4j-test.properties");
+        LogUtils.removeLog();
+        PropertyConfigurator.configure(this.getClass().getClassLoader().getResource("log4j-test.properties"));
 
         folder.newFile(GStack_isEmpty + _19f4281);
         folder.newFile(GStack_isEmpty + _19f4281 + html);
