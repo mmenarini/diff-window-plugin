@@ -10,12 +10,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class GettyInvariantsOutputFilesRetriever {
+public class GettyInvariantsFilesRetriever {
     private static final String FILE_PREFIX = "_getty_inv_";
 
     private File gettyOutputDir;
 
-    public GettyInvariantsOutputFilesRetriever(File gettyOutputDir) {
+    public GettyInvariantsFilesRetriever(File gettyOutputDir) {
         this.gettyOutputDir = gettyOutputDir;
     }
 
@@ -38,10 +38,6 @@ public class GettyInvariantsOutputFilesRetriever {
         }
 
         return Optional.of(result);
-    }
-
-    private boolean isGettyInvariantsOutputFile(File file) {
-        return file != null && file.isFile() && ".out".equals(FilenameUtils.getExtension(file.getName()));
     }
 
     public Optional<List<File>> getFiles(String className, String methodName) {
@@ -68,16 +64,20 @@ public class GettyInvariantsOutputFilesRetriever {
         );
     }
 
-    private boolean fileNameContainsClassName(String fileName, String className) {
+    private static boolean isGettyInvariantsOutputFile(File file) {
+        return file != null && file.isFile() && "out".equals(FilenameUtils.getExtension(file.getName()));
+    }
+
+    private static boolean fileNameContainsClassName(String fileName, String className) {
         return fileName.contains(String.format("%s_%s_", FILE_PREFIX, className));
     }
 
-    private boolean fileNameContainsMethodName(String fileName, String methodName) {
+    private static boolean fileNameContainsMethodName(String fileName, String methodName) {
 //        TODO: how to deal with the constructor method? It is called "init"
         return fileName.contains(String.format("_%s--", methodName));
     }
 
-    private boolean fileNameContainsHashCode(String fileName, String hashCode) {
+    private static boolean fileNameContainsHashCode(String fileName, String hashCode) {
         return fileName.contains(String.format("_%s_", hashCode));
     }
 }
