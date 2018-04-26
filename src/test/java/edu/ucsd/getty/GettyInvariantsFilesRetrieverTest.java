@@ -67,7 +67,7 @@ public class GettyInvariantsFilesRetrieverTest {
 
         List<File> files = optionalFiles.get();
         assertEquals(2, files.size());
-        assertEquals(GStack_isFull + _19f4281, files.get(0).getName());
+        assertEquals(GStack_isFull + _19f4281, files.get(1).getName());
         assertEquals(GStack_isFull + _a562db1, files.get(1).getName());
     }
 
