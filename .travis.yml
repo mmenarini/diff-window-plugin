@@ -10,4 +10,5 @@ cache:
     - $HOME/.gradle/wrapper/
 
 build:
+  - gradle wrapper
   - ./gradlew assemble
