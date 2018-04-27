@@ -6,10 +6,12 @@ import com.intellij.openapi.editor.event.EditorEventMulticaster;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
+import edu.ucsd.AppState;
 import edu.ucsd.FileReader;
 import edu.ucsd.factory.PanelFactory;
 import edu.ucsd.getty.GettyInvariantsFilesRetriever;
 import edu.ucsd.idea.MyCaretListener;
+import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.PropertyConfigurator;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +27,12 @@ public class DiffToolWindowFactory implements ToolWindowFactory {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+
+//        TODO: move to file that will handle retrieving invariant files
+        Disposable classMethodObservable = AppState.getCurrentClassMethodObservable()
+                .subscribe(classMethod -> log.warn("class method observed: class {} method {}", classMethod.getClassName(), classMethod.getMethodName()));
+
+
 //        TODO: move to config class
         PropertyConfigurator.configure(this.getClass().getClassLoader().getResource("log4j.properties"));
 

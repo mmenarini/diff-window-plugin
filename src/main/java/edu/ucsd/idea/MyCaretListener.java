@@ -7,6 +7,8 @@ import com.intellij.openapi.editor.event.CaretListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
+import edu.ucsd.AppState;
+import edu.ucsd.ClassMethod;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -15,7 +17,9 @@ public class MyCaretListener implements CaretListener {
 
     @Override
     public void caretPositionChanged(CaretEvent e) {
-        log.warn("position changed from {} to {}", e.getOldPosition(), e.getNewPosition());
+        log.info("position changed from {} to {}", e.getOldPosition(), e.getNewPosition());
+
+//        Find current class and method and update the AppState
 
         Editor currEditor = e.getEditor();
         Project project = currEditor.getProject();
@@ -49,6 +53,11 @@ public class MyCaretListener implements CaretListener {
             return;
         }
 
-        log.warn("currClass {} currMethod {}", currClass.getName(), currMethod.getName());
+        log.info("currClass {} currMethod {}", currClass.getName(), currMethod.getName());
+
+//        TODO: what to do if there are multiple classes with the same name?
+        ClassMethod classMethod = new ClassMethod(currClass.getName(), currMethod.getName());
+
+        AppState.setCurrentClassMethod(classMethod);
     }
 }
