@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MyCaretListener implements CaretListener {
 
-
     @Override
     public void caretPositionChanged(CaretEvent e) {
         log.info("position changed from {} to {}", e.getOldPosition(), e.getNewPosition());
