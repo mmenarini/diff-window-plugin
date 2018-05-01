@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,6 +19,9 @@ public class GettyInvariantsFilesRetrieverTest {
 
     private static final String GStack_isFull = "_getty_inv__GStack_isFull----";
     private static final String GStack_isEmpty = "_getty_inv__GStack_isEmpty----";
+    private static final String GStack_Constructor = "_getty_inv__GStack_--init----";
+    private static final String GStack_push = "_getty_inv__GStack_push--Object--";
+    private static final String GStack_fakePush = "_getty_inv__GStack_fakePush--Object----int----Object--";
     private static final String _19f4281 = "__19f4281_.inv.out";
     private static final String _a562db1 = "__a562db1_.inv.out";
     private static final String html = ".html";
@@ -39,6 +43,10 @@ public class GettyInvariantsFilesRetrieverTest {
         folder.newFile(GStack_isFull + _19f4281 + html);
         folder.newFile(GStack_isFull + _a562db1 + html);
         folder.newFile(GStack_isFull + _a562db1);
+        folder.newFile(GStack_push + _a562db1);
+        folder.newFile(GStack_Constructor +"--" + _a562db1);
+        folder.newFile(GStack_Constructor +"int--" + _a562db1);
+        folder.newFile(GStack_fakePush + _a562db1);
 
         filesRetriever = new GettyInvariantsFilesRetriever(folder.getRoot());
     }
@@ -49,10 +57,14 @@ public class GettyInvariantsFilesRetrieverTest {
         assertNotEquals(Optional.empty(), optionalFiles);
 
         List<File> files = optionalFiles.get();
-        assertEquals(3, files.size());
-        assertEquals(GStack_isEmpty + _19f4281, files.get(0).getName());
-        assertEquals(GStack_isFull + _19f4281, files.get(1).getName());
-        assertEquals(GStack_isFull + _a562db1, files.get(2).getName());
+        assertEquals(7, files.size());
+        assertEquals(GStack_push + _a562db1, files.get(0).getName());
+        assertEquals(GStack_isEmpty + _19f4281, files.get(1).getName());
+        assertEquals(GStack_Constructor +"--" + _a562db1, files.get(2).getName());
+        assertEquals(GStack_fakePush + _a562db1, files.get(3).getName());
+        assertEquals(GStack_isFull + _19f4281, files.get(4).getName());
+        assertEquals(GStack_Constructor + "int--" + _a562db1, files.get(5).getName());
+        assertEquals(GStack_isFull + _a562db1, files.get(6).getName());
 
         files.forEach(file -> {
 //            System.out.println(file.getName() + "   matches: "+file.getName().matches(".+_\\.inv\\.out$"));
@@ -62,7 +74,7 @@ public class GettyInvariantsFilesRetrieverTest {
 
     @Test
     public void getFilesByClassnameAndMethodName() {
-        Optional<List<File>> optionalFiles = filesRetriever.getFiles("GStack", "isFull");
+        Optional<List<File>> optionalFiles = filesRetriever.getFiles("GStack", "isFull", new ArrayList<>());
         assertNotEquals(Optional.empty(), optionalFiles);
 
         List<File> files = optionalFiles.get();
@@ -73,7 +85,7 @@ public class GettyInvariantsFilesRetrieverTest {
 
     @Test
     public void getFilesByClassnameMethodNameAndHashCode() {
-        Optional<List<File>> optionalFiles = filesRetriever.getFiles("GStack", "isFull", "19f4281");
+        Optional<List<File>> optionalFiles = filesRetriever.getFiles("GStack", "isFull", new ArrayList<>(), "19f4281");
         assertNotEquals(Optional.empty(), optionalFiles);
 
         List<File> files = optionalFiles.get();
@@ -105,6 +117,54 @@ public class GettyInvariantsFilesRetrieverTest {
         Optional<List<File>> optionalFiles = filesRetriever.getFiles("whatever");
         assertEquals(Optional.empty(), optionalFiles);
         assertTrue(LogUtils.getLogAsString().get().contains("was empty or rendered an I/O error"));
+    }
+
+    @Test
+    public void testConstructor() {
+        Optional<List<File>> optionalFiles = filesRetriever.getFiles("GStack", "GStack", new ArrayList<>());
+        assertNotEquals(Optional.empty(), optionalFiles);
+
+        List<File> files = optionalFiles.get();
+        assertEquals(1, files.size());
+        assertEquals(GStack_Constructor + "--" + _a562db1, files.get(0).getName());
+    }
+
+    @Test
+    public void testConstructorWithParameter() {
+        ArrayList<String> parameterTypes = new ArrayList<>();
+        parameterTypes.add("int");
+        Optional<List<File>> optionalFiles = filesRetriever.getFiles("GStack", "GStack", parameterTypes);
+        assertNotEquals(Optional.empty(), optionalFiles);
+
+        List<File> files = optionalFiles.get();
+        assertEquals(1, files.size());
+        assertEquals(GStack_Constructor + "int--" + _a562db1, files.get(0).getName());
+    }
+
+    @Test
+    public void testMethodWithParameter() {
+        ArrayList<String> parameterTypes = new ArrayList<>();
+        parameterTypes.add("Object");
+        Optional<List<File>> optionalFiles = filesRetriever.getFiles("GStack", "push", parameterTypes);
+        assertNotEquals(Optional.empty(), optionalFiles);
+
+        List<File> files = optionalFiles.get();
+        assertEquals(1, files.size());
+        assertEquals(GStack_push + _a562db1, files.get(0).getName());
+    }
+
+    @Test
+    public void testMethodWithMultipleParameters() {
+        ArrayList<String> parameterTypes = new ArrayList<>();
+        parameterTypes.add("Object");
+        parameterTypes.add("int");
+        parameterTypes.add("Object");
+        Optional<List<File>> optionalFiles = filesRetriever.getFiles("GStack", "fakePush", parameterTypes);
+        assertNotEquals(Optional.empty(), optionalFiles);
+
+        List<File> files = optionalFiles.get();
+        assertEquals(1, files.size());
+        assertEquals(GStack_fakePush + _a562db1, files.get(0).getName());
     }
 
 }

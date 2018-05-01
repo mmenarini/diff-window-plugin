@@ -2,6 +2,7 @@ package edu.ucsd.getty;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public class GettyInvariantsFilesRetriever {
         for (File file : files) {
             if (isGettyInvariantsOutputFile(file)) {
                 String fileName = file.getName();
-                if (fileNameContainsClassName(fileName, className)) {
+                if (isFileNameContainsClassName(fileName, className)) {
                     result.add(file);
                 }
             }
@@ -41,21 +42,29 @@ public class GettyInvariantsFilesRetriever {
     }
 
     public Optional<List<File>> getFiles(String className, String methodName) {
+        String m = transformMethodNameForConstructor(className, methodName);
         return getFiles(className).map(files -> files.stream()
-                .filter(file -> fileNameContainsMethodName(file.getName(), methodName))
+                .filter(file -> isFileNameContainsMethodName(file.getName(), m))
                 .collect(Collectors.toList())
         );
     }
 
-    public Optional<List<File>> getFiles(String className, String methodName, String hashCode) {
+    public Optional<List<File>> getFiles(String className, String methodName, List<String> parameterTypes) {
         return getFiles(className, methodName).map(files -> files.stream()
-                .filter(file -> fileNameContainsHashCode(file.getName(), hashCode))
+                .filter(file -> isFileNameContainsAllParameterTypes(file.getName(), parameterTypes))
                 .collect(Collectors.toList())
         );
     }
 
-    public Optional<File> getFile(String className, String methodName, String hashCode) {
-        return getFiles(className, methodName, hashCode).map(files -> files.stream()
+    public Optional<List<File>> getFiles(String className, String methodName, List<String> parameterTypes, String hashCode) {
+        return getFiles(className, methodName, parameterTypes).map(files -> files.stream()
+                .filter(file -> isFileNameContainsHashCode(file.getName(), hashCode))
+                .collect(Collectors.toList())
+        );
+    }
+
+    public Optional<File> getFile(String className, String methodName, List<String> parameterTypes, String hashCode) {
+        return getFiles(className, methodName, parameterTypes, hashCode).map(files -> files.stream()
                 .reduce((file, otherFile) -> {
                     log.warn("Multiple files matched for className {}, methodName {}, and hashCode {}");
                     return file;
@@ -64,20 +73,55 @@ public class GettyInvariantsFilesRetriever {
         );
     }
 
+    private String transformMethodNameForConstructor(String className, String methodName) {
+        if (className != null && StringUtils.equals(className, methodName)) {
+            return "--init";
+        } else {
+            return methodName;
+        }
+    }
+
     private static boolean isGettyInvariantsOutputFile(File file) {
         return file != null && file.isFile() && "out".equals(FilenameUtils.getExtension(file.getName()));
     }
 
-    private static boolean fileNameContainsClassName(String fileName, String className) {
+    private static boolean isFileNameContainsClassName(String fileName, String className) {
         return fileName.contains(String.format("%s_%s_", FILE_PREFIX, className));
     }
 
-    private static boolean fileNameContainsMethodName(String fileName, String methodName) {
-//        TODO: how to deal with the constructor method? It is called "init"
+    private static boolean isFileNameContainsMethodName(String fileName, String methodName) {
         return fileName.contains(String.format("_%s--", methodName));
     }
 
-    private static boolean fileNameContainsHashCode(String fileName, String hashCode) {
+    private static boolean isFileNameContainsAllParameterTypes(String fileName, List<String> parameterTypes) {
+        String[] split = fileName.split("--");
+        log.info("filename {} parameters {} split {}", fileName, parameterTypes, split);
+
+        int i = 1;
+        String firstParamType = split[i];
+
+        if (StringUtils.equals(firstParamType, "init")) {
+            i = 3;
+            firstParamType = split[i];
+        }
+
+        if (StringUtils.equals(firstParamType, "") && parameterTypes.size() == 0) {
+            return true;
+        }
+
+        int j = 0;
+        while (i < split.length) {
+            if (j >= parameterTypes.size() || !StringUtils.equals(split[i], parameterTypes.get(j))) {
+                return false;
+            }
+            i += 2;
+            j++;
+        }
+
+        return true;
+    }
+
+    private static boolean isFileNameContainsHashCode(String fileName, String hashCode) {
         return fileName.contains(String.format("_%s_", hashCode));
     }
 }

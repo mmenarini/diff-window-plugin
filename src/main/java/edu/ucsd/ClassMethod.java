@@ -4,10 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode
 public class ClassMethod {
     private String className;
     private String methodName;
+    private List<String> parameterTypes;
 }

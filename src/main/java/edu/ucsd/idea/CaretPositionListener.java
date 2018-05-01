@@ -11,6 +11,9 @@ import edu.ucsd.AppState;
 import edu.ucsd.ClassMethod;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 public class CaretPositionListener implements CaretListener {
 
@@ -52,11 +55,25 @@ public class CaretPositionListener implements CaretListener {
             return;
         }
 
-        log.info("currClass {} currMethod {}", currClass.getName(), currMethod.getName());
+        List<String> parameterTypes = extractParameterTypes(currMethod);
+
+        log.info("currClass {} currMethod {} parameterTypes {}", currClass.getName(), currMethod.getName(), parameterTypes);
 
 //        TODO: what to do if there are multiple classes with the same name?
-        ClassMethod classMethod = new ClassMethod(currClass.getName(), currMethod.getName());
+        ClassMethod classMethod = new ClassMethod(currClass.getName(), currMethod.getName(), parameterTypes);
 
         AppState.setCurrentClassMethod(classMethod);
+    }
+
+    private List<String> extractParameterTypes(PsiMethod method) {
+        List<String> result = new ArrayList<>();
+
+        PsiParameter[] parameters = method.getParameterList().getParameters();
+
+        for (int i = 0; i < parameters.length; i++) {
+            result.add(parameters[i].getType().getPresentableText());
+        }
+
+        return result;
     }
 }

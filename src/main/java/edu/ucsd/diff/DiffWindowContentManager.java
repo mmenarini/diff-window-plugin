@@ -46,8 +46,8 @@ public class DiffWindowContentManager {
     }
 
     private void handleClassMethodChanged(ClassMethod newClassMethod) {
-        log.warn("class method observed: class {} method {}",
-                newClassMethod.getClassName(), newClassMethod.getMethodName());
+        log.warn("class method observed: class {} method {} parameterTypes {}",
+                newClassMethod.getClassName(), newClassMethod.getMethodName(), newClassMethod.getParameterTypes());
 
         if (previousClassMethod != null && previousClassMethod.equals(newClassMethod)) return;
 
@@ -55,7 +55,8 @@ public class DiffWindowContentManager {
 
         List<DiffTab> tabsList = new ArrayList<>();
 
-        Optional<List<File>> filesOptional = gettyInvariantsFilesRetriever.getFiles(newClassMethod.getClassName(), newClassMethod.getMethodName());
+        Optional<List<File>> filesOptional = gettyInvariantsFilesRetriever
+                .getFiles(newClassMethod.getClassName(), newClassMethod.getMethodName(), newClassMethod.getParameterTypes());
 
         if (filesOptional.isPresent()) {
             tabsList = initTabsList(filesOptional.get(), newClassMethod);

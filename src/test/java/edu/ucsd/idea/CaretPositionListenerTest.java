@@ -14,6 +14,8 @@ import mockit.integration.junit4.JMockit;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+
 @RunWith(JMockit.class)
 public class CaretPositionListenerTest {
 
@@ -34,7 +36,7 @@ public class CaretPositionListenerTest {
 
     @Test
     public void caretPositionChangedTest() throws InterruptedException {
-        ClassMethod classMethod = new ClassMethod("TestClass", "testMethod");
+        ClassMethod classMethod = new ClassMethod("TestClass", "testMethod", new ArrayList<>());
 
         new Expectations() {{
             PsiTreeUtil.getParentOfType((PsiElement) any, PsiMethod.class);
