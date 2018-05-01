@@ -15,10 +15,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(JMockit.class)
-public class MyCaretListenerTest {
+public class CaretPositionListenerTest {
 
     @Tested
-    MyCaretListener myCaretListener = new MyCaretListener();
+    CaretPositionListener caretPositionListener = new CaretPositionListener();
 
     @Mocked
     AppState appState;
@@ -54,7 +54,7 @@ public class MyCaretListenerTest {
             times = 1;
         }};
 
-        myCaretListener.caretPositionChanged(caretEvent);
+        caretPositionListener.caretPositionChanged(caretEvent);
 
 // TODO: test the observable
 //        TestObserver<ClassMethod> observer = AppState.getCurrentClassMethodObservable()

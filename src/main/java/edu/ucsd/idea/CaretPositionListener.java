@@ -12,7 +12,7 @@ import edu.ucsd.ClassMethod;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class MyCaretListener implements CaretListener {
+public class CaretPositionListener implements CaretListener {
 
     @Override
     public void caretPositionChanged(CaretEvent e) {
