@@ -11,6 +11,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -57,14 +58,16 @@ public class GettyInvariantsFilesRetrieverTest {
         assertNotEquals(Optional.empty(), optionalFiles);
 
         List<File> files = optionalFiles.get();
+        List<String> fileNames = files.stream().map(File::getName).collect(Collectors.toList());
+
         assertEquals(7, files.size());
-        assertEquals(GStack_push + _a562db1, files.get(0).getName());
-        assertEquals(GStack_isEmpty + _19f4281, files.get(1).getName());
-        assertEquals(GStack_Constructor +"--" + _a562db1, files.get(2).getName());
-        assertEquals(GStack_fakePush + _a562db1, files.get(3).getName());
-        assertEquals(GStack_isFull + _19f4281, files.get(4).getName());
-        assertEquals(GStack_Constructor + "int--" + _a562db1, files.get(5).getName());
-        assertEquals(GStack_isFull + _a562db1, files.get(6).getName());
+        assertTrue(fileNames.contains(GStack_push + _a562db1));
+        assertTrue(fileNames.contains(GStack_isEmpty + _19f4281));
+        assertTrue(fileNames.contains(GStack_Constructor +"--" + _a562db1));
+        assertTrue(fileNames.contains(GStack_fakePush + _a562db1));
+        assertTrue(fileNames.contains(GStack_isFull + _19f4281));
+        assertTrue(fileNames.contains(GStack_Constructor + "int--" + _a562db1));
+        assertTrue(fileNames.contains(GStack_isFull + _a562db1));
 
         files.forEach(file -> {
 //            System.out.println(file.getName() + "   matches: "+file.getName().matches(".+_\\.inv\\.out$"));
@@ -78,9 +81,11 @@ public class GettyInvariantsFilesRetrieverTest {
         assertNotEquals(Optional.empty(), optionalFiles);
 
         List<File> files = optionalFiles.get();
+        List<String> fileNames = files.stream().map(File::getName).collect(Collectors.toList());
+
         assertEquals(2, files.size());
-        assertEquals(GStack_isFull + _19f4281, files.get(0).getName());
-        assertEquals(GStack_isFull + _a562db1, files.get(1).getName());
+        assertTrue(fileNames.contains(GStack_isFull + _19f4281));
+        assertTrue(fileNames.contains(GStack_isFull + _a562db1));
     }
 
     @Test
