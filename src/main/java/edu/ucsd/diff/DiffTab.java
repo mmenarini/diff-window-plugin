@@ -6,6 +6,7 @@ import com.intellij.diff.contents.DocumentContent;
 import com.intellij.diff.requests.SimpleDiffRequest;
 import com.intellij.diff.util.DiffUserDataKeys;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.content.Content;
@@ -35,6 +36,10 @@ public class DiffTab {
         DiffRequestPanel diffPanel = createDiffPanel(diffRequest, disposable);
         JPanel panel = createPanel(diffPanel);
 
+//        add actions
+        JPanel toolWindowActionsPanel = createToolWindowActionsPanel(getActionGroun());
+        panel.add(toolWindowActionsPanel, BorderLayout.WEST);
+
 //        create new content for tab
         if (this.content != null) {
             this.content.dispose();
@@ -42,6 +47,22 @@ public class DiffTab {
         this.content = ContentFactory.SERVICE.getInstance().
                 createContent(panel, this.title, false);
         content.setDisposer(disposable);
+    }
+
+    private DefaultActionGroup getActionGroun() {
+        final AnAction action = ActionManager.getInstance().getAction("DiffWindow.ReInfer");
+        DefaultActionGroup actionGroup = new DefaultActionGroup();
+        actionGroup.add(action);
+        return actionGroup;
+    }
+
+
+    private JPanel createToolWindowActionsPanel(DefaultActionGroup actionGroup) {
+        JPanel toolbarPanel = new JPanel();
+        ActionManager actionManager = ActionManager.getInstance();
+        ActionToolbar leftToolbar = actionManager.createActionToolbar(ActionPlaces.DIFF_TOOLBAR, actionGroup, false);
+        toolbarPanel.add(leftToolbar.getComponent(), BorderLayout.WEST);
+        return toolbarPanel;
     }
 
     private DiffRequestPanel createDiffPanel(SimpleDiffRequest diffRequest, Disposable disposable) {

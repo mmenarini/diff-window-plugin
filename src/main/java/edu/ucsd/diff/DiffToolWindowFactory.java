@@ -6,9 +6,7 @@ import com.intellij.openapi.editor.event.EditorEventMulticaster;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
-import edu.ucsd.AppState;
 import edu.ucsd.idea.CaretPositionListener;
-import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.PropertyConfigurator;
 import org.jetbrains.annotations.NotNull;
@@ -32,8 +30,7 @@ public class DiffToolWindowFactory implements ToolWindowFactory {
 
         log.warn("created caret listener");
 
-
-        log.error("Project base path {}", project.getBasePath());
+        log.warn("Project base path {}", project.getBasePath());
 
 
     }

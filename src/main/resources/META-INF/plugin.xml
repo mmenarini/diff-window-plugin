@@ -28,9 +28,10 @@
     </extensions>
 
     <actions>
-        <group id="MyPlugin.SampleMenu" text="Greeting" description="Greeting menu">
+        <group id="DiffWindow.Menu" text="DiffWindow" description="Actions for the DiffWindow">
             <add-to-group group-id="MainMenu" anchor="last"/>
-            <action id="Myplugin.Textboxes" class="edu.ucsd.HelloAction" text="Hello" description="Says hello"/>
+            <action class="edu.ucsd.ReInferAction" id="DiffWindow.ReInfer" text="Re-infer"
+                    description="Re-infer invariants" icon="/icons/refresh.png"/>
         </group>
     </actions>
 
