@@ -5,6 +5,8 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.event.CaretEvent;
 import com.intellij.openapi.editor.event.CaretListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 import edu.ucsd.AppState;
@@ -63,6 +65,11 @@ public class CaretPositionListener implements CaretListener {
         ClassMethod classMethod = new ClassMethod(currClass.getName(), currMethod.getName(), parameterTypes);
 
         AppState.setCurrentClassMethod(classMethod);
+
+        FileStatusManager fileStatusManager = FileStatusManager.getInstance(project);
+        FileStatus status = fileStatusManager.getStatus(currPsiFile.getVirtualFile());
+        log.warn("file status: {}", status);
+
     }
 
     private List<String> extractParameterTypes(PsiMethod method) {

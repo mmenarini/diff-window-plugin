@@ -22,6 +22,12 @@
     <depends>com.intellij.modules.lang</depends>
     -->
 
+    <application-components>
+        <component>
+            <implementation-class>edu.ucsd.InitializePlugin</implementation-class>
+        </component>
+    </application-components>
+
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="DiffToolWindow" anchor="bottom"
                     factoryClass="edu.ucsd.diff.DiffToolWindowFactory"/>
