@@ -37,8 +37,7 @@ public class DiffTab {
         JPanel panel = createPanel(diffPanel);
 
 //        add actions
-        JPanel toolWindowActionsPanel = createToolWindowActionsPanel(getActionGroun());
-        panel.add(toolWindowActionsPanel, BorderLayout.WEST);
+        panel.add(DiffActionsPanel.ACTIONS_PANEL, BorderLayout.WEST);
 
 //        create new content for tab
         if (this.content != null) {
@@ -47,22 +46,6 @@ public class DiffTab {
         this.content = ContentFactory.SERVICE.getInstance().
                 createContent(panel, this.title, false);
         content.setDisposer(disposable);
-    }
-
-    private DefaultActionGroup getActionGroun() {
-        final AnAction action = ActionManager.getInstance().getAction("DiffWindow.ReInfer");
-        DefaultActionGroup actionGroup = new DefaultActionGroup();
-        actionGroup.add(action);
-        return actionGroup;
-    }
-
-
-    private JPanel createToolWindowActionsPanel(DefaultActionGroup actionGroup) {
-        JPanel toolbarPanel = new JPanel();
-        ActionManager actionManager = ActionManager.getInstance();
-        ActionToolbar leftToolbar = actionManager.createActionToolbar(ActionPlaces.DIFF_TOOLBAR, actionGroup, false);
-        toolbarPanel.add(leftToolbar.getComponent(), BorderLayout.WEST);
-        return toolbarPanel;
     }
 
     private DiffRequestPanel createDiffPanel(SimpleDiffRequest diffRequest, Disposable disposable) {
