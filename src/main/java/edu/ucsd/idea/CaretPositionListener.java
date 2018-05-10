@@ -11,6 +11,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 import edu.ucsd.AppState;
 import edu.ucsd.ClassMethod;
+import edu.ucsd.reinfer.ReInferPriority;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -62,12 +63,18 @@ public class CaretPositionListener implements CaretListener {
         log.info("currClass {} currMethod {} parameterTypes {}", currClass.getName(), currMethod.getName(), parameterTypes);
 
 //        TODO: what to do if there are multiple classes with the same name?
-        ClassMethod classMethod = new ClassMethod(currClass.getName(), currMethod.getName(), parameterTypes);
+        ClassMethod classMethod = new ClassMethod(currClass.getQualifiedName(), currClass.getName(), currMethod.getName(), parameterTypes);
 
         AppState.setCurrentClassMethod(classMethod);
 
         FileStatusManager fileStatusManager = FileStatusManager.getInstance(project);
         FileStatus status = fileStatusManager.getStatus(currPsiFile.getVirtualFile());
+
+        if (!FileStatus.NOT_CHANGED.equals(status)) {
+            log.warn("adding re-infer for {}", classMethod.getQualifiedMethodName());
+            ReInferPriority.getInstance().addClassMethod(classMethod);
+        }
+
         log.warn("file status: {}", status);
 
     }

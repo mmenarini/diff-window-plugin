@@ -10,7 +10,14 @@ import java.util.List;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class ClassMethod {
+    private String qualifiedClassName;
     private String className;
     private String methodName;
     private List<String> parameterTypes;
+
+    public String getQualifiedMethodName() {
+        return qualifiedClassName +
+                ":" +
+                methodName;
+    }
 }
