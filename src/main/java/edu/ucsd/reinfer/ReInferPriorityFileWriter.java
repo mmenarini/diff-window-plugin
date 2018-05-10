@@ -12,9 +12,9 @@ class ReInferPriorityFileWriter {
     private static ObjectMapper objectMapper = new ObjectMapper();
     private static String fileName = "re-infer-priority.json";
 
-    static Optional<File> write(ReInferPriority reInferPriority) {
+    static Optional<File> write(String basePath, ReInferPriority reInferPriority) {
         try {
-            File f = new File(fileName);
+            File f = new File(basePath + "/" + fileName);
             objectMapper.writeValue(f, reInferPriority);
             return Optional.of(f);
         } catch (IOException e) {

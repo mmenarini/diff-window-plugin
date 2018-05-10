@@ -3,14 +3,11 @@ package edu.ucsd.reinfer;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
-import edu.ucsd.ClassMethod;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class ReInferAction extends AnAction {
@@ -22,8 +19,14 @@ public class ReInferAction extends AnAction {
 
     public void actionPerformed(AnActionEvent event) {
         log.warn("Reinferring {} size {}", reInferPriority.getPriorityList().toArray(), reInferPriority.getPriorityList().size());
-        Optional<File> file = ReInferPriorityFileWriter.write(reInferPriority);
+        Project project = event.getProject();
+        if (project != null) {
+            String basePath = StringUtils.defaultIfEmpty(project.getBasePath(), "");
+            Optional<File> file = ReInferPriorityFileWriter.write(basePath, reInferPriority);
+            file.ifPresent(f -> log.warn("file path {}", f.getAbsolutePath()));
 
-//        if file present run Getty
+            //        if file present run Getty
+        }
+
     }
 }
