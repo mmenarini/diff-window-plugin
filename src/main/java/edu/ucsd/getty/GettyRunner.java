@@ -1,6 +1,7 @@
 package edu.ucsd.getty;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.SystemUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,8 +21,9 @@ public class GettyRunner {
             throw new IllegalStateException("Wrong python version");
         }
 
-        String cmd = String.format("python %s/csi.py %s %s %s", gettyHome, commitHashPre, commitHashPost, priorityFilePath);
+        String cmd = String.format("python2.7 %s %s %s %s", getCsiPath(gettyHome), commitHashPre, commitHashPost, priorityFilePath);
         Process p = Runtime.getRuntime().exec(cmd);
+        waitForProcessToComplete(p);
 
         if (p.exitValue() != 0) {
             logProcessErrorOutput(p, cmd);
@@ -30,8 +32,9 @@ public class GettyRunner {
     }
 
     private boolean isCorrectPythonVersion() throws IOException {
-        String cmd = "python --version";
+        String cmd = "python2.7 --version";
         Process p = Runtime.getRuntime().exec(cmd);
+        waitForProcessToComplete(p);
 
         BufferedReader stdError = new BufferedReader(new
                 InputStreamReader(p.getErrorStream()));
@@ -49,6 +52,23 @@ public class GettyRunner {
         }
 
         return true;
+    }
+
+    private String getCsiPath(String gettyHome) {
+        if (SystemUtils.IS_OS_WINDOWS) {
+            gettyHome += "\\";
+        } else {
+            gettyHome += "/";
+        }
+        return gettyHome + "csi.py";
+    }
+
+    private void waitForProcessToComplete(Process p) {
+        try {
+            p.waitFor();
+        } catch (InterruptedException e) {
+            log.error("Interrupted {}", e);
+        }
     }
 
     private void logProcessErrorOutput(Process p, String cmd) throws IOException {
