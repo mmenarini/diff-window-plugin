@@ -36,7 +36,7 @@ public class CaretPositionListenerTest {
 
     @Test
     public void caretPositionChangedTest() throws InterruptedException {
-        ClassMethod classMethod = new ClassMethod("TestClass", "testMethod", new ArrayList<>());
+        ClassMethod classMethod = new ClassMethod("edu.ucsd.TestClass","TestClass", "testMethod", new ArrayList<>());
 
         new Expectations() {{
             PsiTreeUtil.getParentOfType((PsiElement) any, PsiMethod.class);
@@ -48,6 +48,9 @@ public class CaretPositionListenerTest {
             psiMethod.getName();
             result = "testMethod";
 
+            psiClass.getQualifiedName();
+            result = "edu.ucsd.TestClass";
+
             psiClass.getName();
             result = "TestClass";
 
@@ -57,6 +60,8 @@ public class CaretPositionListenerTest {
         }};
 
         caretPositionListener.caretPositionChanged(caretEvent);
+
+//        TODO: test classmethod qualified method name
 
 // TODO: test the observable
 //        TestObserver<ClassMethod> observer = AppState.getCurrentClassMethodObservable()
