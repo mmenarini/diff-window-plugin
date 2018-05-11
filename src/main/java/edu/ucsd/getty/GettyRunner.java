@@ -1,7 +1,6 @@
 package edu.ucsd.getty;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.SystemUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,10 +9,10 @@ import java.io.InputStreamReader;
 @Slf4j
 public class GettyRunner {
 
-    private String gettyHome;
+    private String gettyPath;
 
-    public GettyRunner(String gettyHome) {
-        this.gettyHome = gettyHome;
+    public GettyRunner(String gettyPath) {
+        this.gettyPath = gettyPath;
     }
 
     public void run(String commitHashPre, String commitHashPost, String priorityFilePath) throws IOException {
@@ -21,7 +20,7 @@ public class GettyRunner {
             throw new IllegalStateException("Wrong python version");
         }
 
-        String cmd = String.format("python2.7 %s %s %s %s", getCsiPath(gettyHome), commitHashPre, commitHashPost, priorityFilePath);
+        String cmd = String.format("python2.7 %s %s %s %s", gettyPath, commitHashPre, commitHashPost, priorityFilePath);
         Process p = Runtime.getRuntime().exec(cmd);
         waitForProcessToComplete(p);
 
@@ -53,15 +52,15 @@ public class GettyRunner {
 
         return true;
     }
-
-    private String getCsiPath(String gettyHome) {
-        if (SystemUtils.IS_OS_WINDOWS) {
-            gettyHome += "\\";
-        } else {
-            gettyHome += "/";
-        }
-        return gettyHome + "csi.py";
-    }
+//
+//    private String getCsiPath(String gettyHome) {
+//        if (SystemUtils.IS_OS_WINDOWS) {
+//            gettyHome += "\\";
+//        } else {
+//            gettyHome += "/";
+//        }
+//        return gettyHome + "csi.py";
+//    }
 
     private void waitForProcessToComplete(Process p) {
         try {

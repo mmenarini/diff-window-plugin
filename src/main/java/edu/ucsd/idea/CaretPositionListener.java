@@ -5,12 +5,14 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.event.CaretEvent;
 import com.intellij.openapi.editor.event.CaretListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.DialogBuilder;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 import edu.ucsd.AppState;
 import edu.ucsd.ClassMethod;
+import edu.ucsd.properties.PropertiesForm;
 import edu.ucsd.reinfer.ReInferPriority;
 import lombok.extern.slf4j.Slf4j;
 

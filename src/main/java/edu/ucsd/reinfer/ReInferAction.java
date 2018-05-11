@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import edu.ucsd.getty.GettyRunner;
+import edu.ucsd.properties.PropertiesService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -14,7 +15,7 @@ import java.util.Optional;
 @Slf4j
 public class ReInferAction extends AnAction {
     private ReInferPriority reInferPriority = ReInferPriority.getInstance();
-    private GettyRunner gettyRunner = new GettyRunner("test");
+    private GettyRunner gettyRunner = new GettyRunner(PropertiesService.getInstance().getGettyPath());
 
     public ReInferAction() {
         super("reinfer");

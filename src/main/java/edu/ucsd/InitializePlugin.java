@@ -5,7 +5,9 @@ import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.CaretListener;
 import com.intellij.openapi.editor.event.EditorEventMulticaster;
 import edu.ucsd.idea.CaretPositionListener;
+import edu.ucsd.properties.PropertiesService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.PropertyConfigurator;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,6 +18,12 @@ public class InitializePlugin implements ApplicationComponent {
         System.out.println(".....Initializing log4j.....");
 
         PropertyConfigurator.configure(this.getClass().getClassLoader().getResource("log4j.properties"));
+
+        log.warn("initializing properties service...");
+        PropertiesService propertiesService = PropertiesService.getInstance();
+        if(StringUtils.isEmpty(propertiesService.getGettyPath())) {
+            propertiesService.showSetPropertiesDialog();
+        }
 
         log.warn("initializing caret listener...");
 
