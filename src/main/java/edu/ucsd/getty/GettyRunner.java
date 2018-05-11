@@ -10,9 +10,12 @@ import java.io.InputStreamReader;
 public class GettyRunner {
 
     private String gettyPath;
+    private String pythonPath;
 
-    public GettyRunner(String gettyPath) {
+    public GettyRunner(String gettyPath, String pythonPath) {
+        log.warn("getty runner gettyPath {}, pythonPath {}", gettyPath, pythonPath);
         this.gettyPath = gettyPath;
+        this.pythonPath = pythonPath;
     }
 
     public void run(String commitHashPre, String commitHashPost, String priorityFilePath) throws IOException {
@@ -20,7 +23,7 @@ public class GettyRunner {
             throw new IllegalStateException("Wrong python version");
         }
 
-        String cmd = String.format("python2.7 %s %s %s %s", gettyPath, commitHashPre, commitHashPost, priorityFilePath);
+        String cmd = String.format("%s %s %s %s %s", pythonPath, gettyPath, commitHashPre, commitHashPost, priorityFilePath);
         Process p = Runtime.getRuntime().exec(cmd);
         waitForProcessToComplete(p);
 
@@ -31,12 +34,11 @@ public class GettyRunner {
     }
 
     private boolean isCorrectPythonVersion() throws IOException {
-        String cmd = "python2.7 --version";
+        String cmd = String.format("%s --version", pythonPath);
         Process p = Runtime.getRuntime().exec(cmd);
-        waitForProcessToComplete(p);
-
         BufferedReader stdError = new BufferedReader(new
                 InputStreamReader(p.getErrorStream()));
+        waitForProcessToComplete(p);
 
         if (p.exitValue() != 0) {
             logProcessErrorOutput(p, cmd);
@@ -44,6 +46,7 @@ public class GettyRunner {
         }
 
         String s = stdError.readLine();
+        log.warn("s {}", s);
         int version = Integer.parseInt(s.split(" ")[1].split("\\.")[0]);
         if (version != 2) {
             log.error("Python version 2.7 required but major version was {}: {}", version, s);

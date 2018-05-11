@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
 @RunWith(JMockit.class)
 public class GettyRunnerTest {
     @Tested
-    GettyRunner gettyRunner = new GettyRunner("bla/csi.py");
+    GettyRunner gettyRunner = new GettyRunner("bla/csi.py", "python2.7");
 
     @Before
     public void setUp() {
