@@ -61,7 +61,7 @@ public class CaretPositionListenerTest {
 
         caretPositionListener.caretPositionChanged(caretEvent);
 
-//        TODO: test classmethod qualified method name
+//        TODO: test classmethod qualified method runWithCorrectPythonVersion
 
 // TODO: test the observable
 //        TestObserver<ClassMethod> observer = AppState.getCurrentClassMethodObservable()

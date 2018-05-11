@@ -1,0 +1,2 @@
+print "Hello World!"
+raise Exception('I know Python!')

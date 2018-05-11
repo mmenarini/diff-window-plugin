@@ -14,8 +14,6 @@ import static org.junit.Assert.*;
 
 @RunWith(JMockit.class)
 public class GettyRunnerTest {
-    @Tested
-    GettyRunner gettyRunner = new GettyRunner(System.getProperty("user.dir"),"bla/csi", "python2.7");
 
     @Before
     public void setUp() {
@@ -24,13 +22,35 @@ public class GettyRunnerTest {
     }
 
     @Test
-    public void name() throws IOException {
+    public void runWithCorrectPythonVersion() throws IOException {
+        GettyRunner gettyRunner = new GettyRunner(System.getProperty("user.dir"),"src/test/resources/testScript", "python2.7");
+        gettyRunner.run("pre", "post", "file");
+    }
+    @Test
+
+    public void runWithExceptionInPythonCode() throws IOException {
+        GettyRunner gettyRunner = new GettyRunner(System.getProperty("user.dir"),"src/test/resources/testScriptWithException", "python2.7");
+
         try {
             gettyRunner.run("pre", "post", "file");
             fail("No IllegalStateException thrown");
         } catch (IllegalStateException e) {
-            assertEquals("The csi script exited with value 2", e.getMessage());
+            assertEquals("The csi script exited with value 1", e.getMessage());
         }
-        assertTrue(LogUtils.getLogAsString().get().contains("can't open file 'bla/csi': [Errno 2] No such file or directory"));
+        assertTrue(LogUtils.getLogAsString().get().contains("Hello World!"));
+        assertTrue(LogUtils.getLogAsString().get().contains("Exception: I know Python!"));
     }
+
+    @Test
+    public void runWithInCorrectPythonVersion() throws IOException {
+        GettyRunner gettyRunner = new GettyRunner(System.getProperty("user.dir"),"src/test/resources/testScript", "python3");
+        try {
+            gettyRunner.run("pre", "post", "file");
+            fail("No IllegalStateException thrown");
+        } catch (IllegalStateException e) {
+            assertEquals("Wrong python version", e.getMessage());
+        }
+        assertTrue(LogUtils.getLogAsString().get().contains("Python version 2.7 required but major version was 3"));
+    }
+
 }
