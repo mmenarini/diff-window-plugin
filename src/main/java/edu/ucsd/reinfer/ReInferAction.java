@@ -48,7 +48,7 @@ public class ReInferAction extends AnAction {
 
                 try {
 //                    TODO: commit hashes
-                    gettyRunner = new GettyRunner(properties.getGettyPath(), properties.getPythonPath());
+                    gettyRunner = new GettyRunner(project.getBasePath(), properties.getGettyPath(), properties.getPythonPath());
                     gettyRunner.run("19f4281", "a562db1", f.getAbsolutePath());
                 } catch (IOException e) {
                     e.printStackTrace();

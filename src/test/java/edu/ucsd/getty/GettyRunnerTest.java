@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
 @RunWith(JMockit.class)
 public class GettyRunnerTest {
     @Tested
-    GettyRunner gettyRunner = new GettyRunner("bla/csi.py", "python2.7");
+    GettyRunner gettyRunner = new GettyRunner(System.getProperty("user.dir"),"bla/csi", "python2.7");
 
     @Before
     public void setUp() {
@@ -31,6 +31,6 @@ public class GettyRunnerTest {
         } catch (IllegalStateException e) {
             assertEquals("The csi script exited with value 2", e.getMessage());
         }
-        assertTrue(LogUtils.getLogAsString().get().contains("can't open file 'bla/csi.py': [Errno 2] No such file or directory"));
+        assertTrue(LogUtils.getLogAsString().get().contains("can't open file 'bla/csi': [Errno 2] No such file or directory"));
     }
 }

@@ -38,6 +38,8 @@
             <add-to-group group-id="MainMenu" anchor="last"/>
             <action class="edu.ucsd.reinfer.ReInferAction" id="DiffWindow.ReInfer" text="Re-infer"
                     description="Re-infer invariants" icon="/icons/refresh.png"/>
+            <action class="edu.ucsd.properties.PropertiesAction" id="DiffWindow.Properties" text="Change Properties"
+                    description="Change Properties/Settings" />
         </group>
     </actions>
 
