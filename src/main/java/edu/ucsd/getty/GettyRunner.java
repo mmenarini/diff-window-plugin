@@ -6,6 +6,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Slf4j
 public class GettyRunner {
@@ -13,6 +15,7 @@ public class GettyRunner {
     private String gettyPath;
     private String pythonPath;
     private String projectBasePath;
+    public ExecutorService execService = Executors.newFixedThreadPool(2);
 
     public GettyRunner(String projectBasePath, String gettyPath, String pythonPath) {
         log.warn("getty runner gettyPath {}, pythonPath {}", gettyPath, pythonPath);
@@ -29,21 +32,58 @@ public class GettyRunner {
 
         ProcessBuilder builder = new ProcessBuilder();
 //        builder.command(pythonPath, gettyPath, "-h");
-        builder.command(pythonPath, gettyPath, commitHashPre, commitHashPost, priorityFilePath);
+        builder.command(pythonPath, gettyPath, commitHashPre, commitHashPost);
         builder.directory(new File(projectBasePath).getAbsoluteFile());
         builder.redirectErrorStream(true);
-        Process p = builder.start();
 
-        BufferedReader stdError = new BufferedReader(new
-                InputStreamReader(p.getInputStream()));
+//        TODO: clean up and show logs in DiffWindow
+        execService.submit(new Runnable() {
+            public void run() {
+                Process p = null;
+                try {
+                    p = builder.start();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                BufferedReader stdError = new BufferedReader(new
+                        InputStreamReader(p.getInputStream()));
 
-        waitForProcessToComplete(p);
+                execService.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            writeLogs();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
 
-        if (p.exitValue() != 0) {
-            String cmd = String.format("%s %s %s %s %s", pythonPath, gettyPath, commitHashPre, commitHashPost, priorityFilePath);
-            logProcessErrorOutput(p, cmd, stdError);
-            throw new IllegalStateException("The csi script exited with value " + p.exitValue());
-        }
+                    private void writeLogs() throws IOException {
+                        String s = null;
+                        while ((s = stdError.readLine()) != null) {
+                            log.error(s);
+                        }
+                    }
+                });
+
+                waitForProcessToComplete(p);
+
+
+                if (p.exitValue() != 0) {
+                    String cmd = String.format("%s %s %s %s %s", pythonPath, gettyPath, commitHashPre, commitHashPost, priorityFilePath);
+                    try {
+                        logProcessErrorOutput(p, cmd, stdError);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    throw new IllegalStateException("The csi script exited with value " + p.exitValue());
+                }
+
+                execService.shutdown();
+            }
+        });
+
+
     }
 
     private boolean isCorrectPythonVersion() throws IOException {
@@ -56,10 +96,6 @@ public class GettyRunner {
         BufferedReader stdError = new BufferedReader(new
                 InputStreamReader(p.getInputStream()));
 
-//        String cmd = String.format("%s --version", pythonPath);
-//        Process p = Runtime.getRuntime().exec(cmd);
-//        BufferedReader stdError = new BufferedReader(new
-//                InputStreamReader(p.getErrorStream()));
         waitForProcessToComplete(p);
 
         if (p.exitValue() != 0) {
@@ -68,7 +104,7 @@ public class GettyRunner {
         }
 
         String s = stdError.readLine();
-        log.warn("s {}", s);
+        log.warn("Version: {}", s);
         int version = Integer.parseInt(s.split(" ")[1].split("\\.")[0]);
         if (version != 2) {
             log.error("Python version 2.7 required but major version was {}: {}", version, s);
@@ -77,15 +113,6 @@ public class GettyRunner {
 
         return true;
     }
-//
-//    private String getCsiPath(String gettyHome) {
-//        if (SystemUtils.IS_OS_WINDOWS) {
-//            gettyHome += "\\";
-//        } else {
-//            gettyHome += "/";
-//        }
-//        return gettyHome + "csi.py";
-//    }
 
     private void waitForProcessToComplete(Process p) {
         try {
