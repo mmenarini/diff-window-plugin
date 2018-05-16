@@ -33,6 +33,7 @@ public class GettyRunner {
         ProcessBuilder builder = new ProcessBuilder();
 //        builder.command(pythonPath, gettyPath, "-h");
         builder.command(pythonPath, gettyPath, commitHashPre, commitHashPost);
+//        builder.command(pythonPath, gettyPath, commitHashPre, commitHashPost, priorityFilePath);
         builder.directory(new File(projectBasePath).getAbsoluteFile());
         builder.redirectErrorStream(true);
 
