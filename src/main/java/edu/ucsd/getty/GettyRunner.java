@@ -11,11 +11,11 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 public class GettyRunner {
+    private ExecutorService execService = Executors.newFixedThreadPool(2);
 
     private String gettyPath;
     private String pythonPath;
     private String projectBasePath;
-    public ExecutorService execService = Executors.newFixedThreadPool(2);
 
     public GettyRunner(String projectBasePath, String gettyPath, String pythonPath) {
         log.warn("getty runner gettyPath {}, pythonPath {}", gettyPath, pythonPath);
@@ -37,54 +37,20 @@ public class GettyRunner {
         builder.directory(new File(projectBasePath).getAbsoluteFile());
         builder.redirectErrorStream(true);
 
-//        TODO: clean up and show logs in DiffWindow
-        execService.submit(new Runnable() {
-            public void run() {
-                Process p = null;
-                try {
-                    p = builder.start();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                BufferedReader stdError = new BufferedReader(new
-                        InputStreamReader(p.getInputStream()));
+        Process p = builder.start();
+        BufferedReader stdError = new BufferedReader(new
+                InputStreamReader(p.getInputStream()));
 
-                execService.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            writeLogs();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
+//        TODO: show logs in DiffWindow
+        execService.submit(new Logger(stdError));
 
-                    private void writeLogs() throws IOException {
-                        String s = null;
-                        while ((s = stdError.readLine()) != null) {
-                            log.error(s);
-                        }
-                    }
-                });
+        waitForProcessToComplete(p);
 
-                waitForProcessToComplete(p);
-
-
-                if (p.exitValue() != 0) {
-                    String cmd = String.format("%s %s %s %s %s", pythonPath, gettyPath, commitHashPre, commitHashPost, priorityFilePath);
-                    try {
-                        logProcessErrorOutput(p, cmd, stdError);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    throw new IllegalStateException("The csi script exited with value " + p.exitValue());
-                }
-
-                execService.shutdown();
-            }
-        });
-
-
+        if (p.exitValue() != 0) {
+            String cmd = String.format("%s %s %s %s %s", pythonPath, gettyPath, commitHashPre, commitHashPost, priorityFilePath);
+            logProcessErrorOutput(p, cmd, stdError);
+            throw new IllegalStateException("The csi script exited with value " + p.exitValue());
+        }
     }
 
     private boolean isCorrectPythonVersion() throws IOException {
