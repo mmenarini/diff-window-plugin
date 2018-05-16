@@ -3,6 +3,7 @@ package edu.ucsd.reinfer;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
+import edu.ucsd.getty.GettyConstants;
 import edu.ucsd.getty.GettyRunner;
 import edu.ucsd.properties.Properties;
 import edu.ucsd.properties.PropertiesService;
@@ -60,20 +61,25 @@ public class ReInferAction extends AnAction {
 
     private void reInfer(Project project, File priorityFile) {
         execService.submit(() -> {
-            rsyncAdapter = new RsyncAdapter("/Users/sander/Git/test/rsync/test-source/", "/Users/sander/Git/test/rsync/test-destination");
+            String projectPath = project.getBasePath();
+
+            GettyConstants gettyConstants = new GettyConstants(project);
+
+            rsyncAdapter = new RsyncAdapter(projectPath + "/", gettyConstants.SOURCE_DIR);
 
             try {
                 rsyncAdapter.sync();
             } catch (Exception e) {
-                log.error("Rsync failed: {}", e);
+                log.error("Rsync failed:", e);
             }
 
 //                    TODO: commit hashes
-            gettyRunner = new GettyRunner(project.getBasePath(), properties.getGettyPath(), properties.getPythonPath());
+            gettyRunner = new GettyRunner(gettyConstants.SOURCE_DIR, properties.getGettyPath(), properties.getPythonPath());
             try {
+//                TODO: move priority file to gettyConstants?
                 gettyRunner.run("19f4281", "a562db1", priorityFile.getAbsolutePath());
             } catch (IOException e) {
-                log.error("Getty failed: {}", e);
+                log.error("Getty failed:", e);
             }
 
             //        todo: set app state to not currently re-inferring

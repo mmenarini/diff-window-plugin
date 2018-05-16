@@ -6,6 +6,7 @@ import edu.ucsd.AppState;
 import edu.ucsd.ClassMethod;
 import edu.ucsd.FileReader;
 import edu.ucsd.factory.PanelFactory;
+import edu.ucsd.getty.GettyConstants;
 import edu.ucsd.getty.GettyInvariantsFilesRetriever;
 import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,6 @@ import java.util.Optional;
 
 @Slf4j
 public class DiffWindowContentManager {
-    private static final String GETTY_OUTPUT_DIRECTORY_POST_FIX = ".__getty_output__";
 
     private ToolWindow toolWindow;
     private GettyInvariantsFilesRetriever gettyInvariantsFilesRetriever;
@@ -29,10 +29,9 @@ public class DiffWindowContentManager {
 
     public DiffWindowContentManager(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         this.toolWindow = toolWindow;
+        GettyConstants gettyConstants = new GettyConstants(project);
 
-        this.gettyInvariantsFilesRetriever = new GettyInvariantsFilesRetriever(
-                new File(String.format("%s%s", project.getBasePath(), GETTY_OUTPUT_DIRECTORY_POST_FIX))
-        );
+        this.gettyInvariantsFilesRetriever = new GettyInvariantsFilesRetriever(new File(gettyConstants.OUTPUT_DIR));
 
         this.panelFactory = new PanelFactory(project);
 
@@ -61,7 +60,12 @@ public class DiffWindowContentManager {
         if (filesOptional.isPresent()) {
             tabsList = initTabsList(filesOptional.get(), newClassMethod);
         } else {
+//            TODO: no invariant files, display message that user should execute re-infer action
             log.warn("filesOptional was empty");
+        }
+
+        if (tabsList.size() == 0) {
+            tabsList.add(new DiffTab("", "", "", panelFactory));
         }
 
         this.diffWindow = new DiffWindow(toolWindow, tabsList);

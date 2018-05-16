@@ -10,9 +10,11 @@ public class RsyncAdapter {
     private RSync rsync;
 
     public RsyncAdapter(String source, String destination) {
+        log.warn("Setting up rsync from {} to {}", source, destination);
+
         rsync = new RSync()
-                .source("/Users/sander/Git/test/rsync/test-source/")
-                .destination("/Users/sander/Git/test/rsync/test-destination")
+                .source(source)
+                .destination(destination)
                 .archive(true)
                 .delete(true);
     }
