@@ -1,10 +1,9 @@
 package edu.ucsd.getty;
 
 import com.intellij.openapi.project.Project;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class GettyConstants {
+    public static final String GETTY_COMMIT_MESSAGE = "=== GETTY COMMIT ===";
     public final String SOURCE_DIR;
     public final String OUTPUT_DIR;
 

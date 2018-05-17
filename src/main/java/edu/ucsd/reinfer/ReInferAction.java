@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import edu.ucsd.getty.GettyConstants;
 import edu.ucsd.getty.GettyRunner;
+import edu.ucsd.git.GitAdapter;
 import edu.ucsd.properties.Properties;
 import edu.ucsd.properties.PropertiesService;
 import edu.ucsd.rsync.RsyncAdapter;
@@ -18,6 +19,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static edu.ucsd.getty.GettyConstants.GETTY_COMMIT_MESSAGE;
+
 @Slf4j
 public class ReInferAction extends AnAction {
     private ReInferPriority reInferPriority = ReInferPriority.getInstance();
@@ -29,6 +32,7 @@ public class ReInferAction extends AnAction {
     private Properties properties;
     private GettyRunner gettyRunner;
     private RsyncAdapter rsyncAdapter;
+    private GitAdapter gitAdapter;
 
     public ReInferAction() {
         super("reinfer");
@@ -65,19 +69,47 @@ public class ReInferAction extends AnAction {
 
             GettyConstants gettyConstants = new GettyConstants(project);
 
+
+//            RSYNC
+
             rsyncAdapter = new RsyncAdapter(projectPath + "/", gettyConstants.SOURCE_DIR);
 
             try {
                 rsyncAdapter.sync();
             } catch (Exception e) {
                 log.error("Rsync failed:", e);
+                return;
             }
 
-//                    TODO: commit hashes
+
+//            GIT
+
+            try {
+                gitAdapter = new GitAdapter(gettyConstants.SOURCE_DIR);
+            } catch (IOException e) {
+                log.error("Failed to initialize git repo", e);
+                return;
+            }
+
+            gitAdapter.commitAllChanges(GETTY_COMMIT_MESSAGE);
+
+            String hashOfHead = "";
+            String hashOfParent = "";
+            try {
+                hashOfHead = gitAdapter.getHashOfHead();
+                hashOfParent = gitAdapter.getHashOfFirstParent();
+            } catch (IOException e) {
+                log.error("Failed to get commit hash", e);
+                return;
+            }
+
+
+//            GETTY
+
             gettyRunner = new GettyRunner(gettyConstants.SOURCE_DIR, properties.getGettyPath(), properties.getPythonPath());
             try {
 //                TODO: move priority file to gettyConstants?
-                gettyRunner.run("19f4281", "a562db1", priorityFile.getAbsolutePath());
+                gettyRunner.run(hashOfParent, hashOfHead, priorityFile.getAbsolutePath());
             } catch (IOException e) {
                 log.error("Getty failed:", e);
             }

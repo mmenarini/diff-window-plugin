@@ -18,6 +18,9 @@ dependencies {
     compile group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.1.12'
     compile group: 'org.codehaus.jackson', name: 'jackson-mapper-asl', version: '1.9.13'
     compile group: 'com.github.fracpete', name: 'rsync4j-all', version:'3.1.2-9'
+    compile(group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '4.11.0.201803080745-r') {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
     testCompile group: 'org.jmockit', name: 'jmockit', version: '1.39'
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
