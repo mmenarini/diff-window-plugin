@@ -1,6 +1,7 @@
 package edu.ucsd.getty;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.SystemUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -32,8 +33,17 @@ public class GettyRunner {
 
         ProcessBuilder builder = new ProcessBuilder();
 //        builder.command(pythonPath, gettyPath, "-h");
-        builder.command(pythonPath, gettyPath, commitHashPre, commitHashPost);
-//        builder.command(pythonPath, gettyPath, commitHashPre, commitHashPost, priorityFilePath);
+//        builder.command(pythonPath, gettyPath, commitHashPre, commitHashPost);
+
+        if (SystemUtils.IS_OS_WINDOWS) {
+//            TODO: not tested on Windows yet
+            System.out.println("OS is Windows, attempting to run getty through WSL bash");
+            builder.command("bash.exe -c", '"' + pythonPath, gettyPath, commitHashPre, commitHashPost, priorityFilePath + '"');
+        } else {
+//    TODO: getty crashes when there are no changes in the working copy: It cannot find .inv files and all_to_consider will be an empty set.
+            builder.command(pythonPath, gettyPath, commitHashPre, commitHashPost, priorityFilePath);
+        }
+
         builder.directory(new File(projectBasePath).getAbsoluteFile());
         builder.redirectErrorStream(true);
 
