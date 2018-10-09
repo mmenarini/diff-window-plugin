@@ -96,7 +96,6 @@ public class GettyInvariantsFilesRetriever {
     private static boolean isFileNameContainsAllParameterTypes(String fileName, List<String> parameterTypes) {
         String[] split = fileName.split("--");
         log.info("filename {} parameters {} split {}", fileName, parameterTypes, split);
-
         int i = 1;
         String firstParamType = split[i];
 
@@ -108,14 +107,15 @@ public class GettyInvariantsFilesRetriever {
         if (StringUtils.equals(firstParamType, "") && parameterTypes.size() == 0) {
             return true;
         }
+        String paramString = "";
+        for (String paramType : parameterTypes) {
+            paramString = paramString + paramType  + "-";
+        }
 
-        int j = 0;
-        while (i < split.length) {
-            if (j >= parameterTypes.size() || !StringUtils.equals(split[i], parameterTypes.get(j))) {
-                return false;
-            }
-            i += 2;
-            j++;
+        paramString = paramString.substring(0,paramString.length()-1);
+
+        if (!StringUtils.equals(split[i], paramString)) {
+            return false;
         }
 
         return true;
