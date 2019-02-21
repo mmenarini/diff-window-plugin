@@ -150,14 +150,14 @@ public class GettyInvariantsFilesRetriever {
         String[] lst = newClassMethod.getMethodSignature().split(" ");
         if (lst.length==3) {
             String filename = lst[2].substring(0,lst[2].length()-1)+".inv";
-            Path file1 = invBase
+            Path filePre = invHead
                     .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
                     .resolve(filename);
-            Path file2 = invHead
+            Path filePost = invBase
                     .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
                     .resolve(filename);
 
-            List<File> result = Arrays.asList(file1.toFile(), file2.toFile());
+            List<File> result = Arrays.asList(filePre.toFile(), filePost.toFile());
             return Optional.of(result);
         }
         return Optional.empty();

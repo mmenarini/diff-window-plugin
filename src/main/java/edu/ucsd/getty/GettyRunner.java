@@ -76,10 +76,15 @@ public class GettyRunner {
 
     }
 
-    private void runGradleInvariants(String methodSignature, Path headRepoDir) throws IOException {
+    private void runGradleInvariants(String methodSignature, Path repoDir) throws IOException {
         ProcessBuilder builder = new ProcessBuilder();
-        builder.command("./gradlew", "cleanDaikon", "cleanInvariants","invariants", "-PmethodSignature="+methodSignature, "--info");
-        builder.directory(headRepoDir.toFile());
+//        builder.command(
+//                "./gradlew","cleanTest", "cleanCallgraph", "cleanDaikon", "cleanInvariants","invariants",
+//                "-PmethodSignature="+methodSignature, "--info", "--stacktrace");
+        builder.command(
+                "./gradlew","cleanTest", "invariants",
+                "-PmethodSignature="+methodSignature);
+        builder.directory(repoDir.toFile());
         builder.redirectErrorStream(true);
 
         Process p = builder.start();
