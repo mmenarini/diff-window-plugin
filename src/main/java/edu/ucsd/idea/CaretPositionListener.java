@@ -24,61 +24,69 @@ public class CaretPositionListener implements CaretListener {
 
     @Override
     public void caretPositionChanged(CaretEvent e) {
-        log.info("position changed from {} to {}", e.getOldPosition(), e.getNewPosition());
+      try {
+          log.info("position changed from {} to {}", e.getOldPosition(), e.getNewPosition());
 
 //        Find current class and method and update the AppState
 
-        Editor currEditor = e.getEditor();
-        Project project = currEditor.getProject();
-        if (project == null) {
-            log.error("project was null");
-            return;
-        }
+          Editor currEditor = e.getEditor();
+          Project project = currEditor.getProject();
+          if (project == null) {
+              log.error("project was null");
+              return;
+          }
 
-        PsiFile currPsiFile = PsiDocumentManager.getInstance(currEditor.getProject()).getPsiFile(currEditor.getDocument());
-        if (currPsiFile == null) {
-            log.error("currPsiFile was null");
-            return;
-        }
+          PsiFile currPsiFile = PsiDocumentManager.getInstance(currEditor.getProject()).getPsiFile(currEditor.getDocument());
+          if (currPsiFile == null) {
+              log.error("currPsiFile was null");
+              return;
+          }
 
-        Caret caret = e.getCaret();
-        if (caret == null) {
-            log.error("caret was null");
-            return;
-        }
-        PsiElement element = currPsiFile.findElementAt(caret.getOffset());
+          Caret caret = e.getCaret();
+          if (caret == null) {
+              log.error("caret was null");
+              return;
+          }
+          PsiElement element = currPsiFile.findElementAt(caret.getOffset());
 
-        PsiClass currClass = PsiTreeUtil.getParentOfType(element, PsiClass.class);
-        if (currClass == null) {
-            log.error("currClass was null");
-            return;
-        }
+          PsiClass currClass = PsiTreeUtil.getParentOfType(element, PsiClass.class);
+          if (currClass == null) {
+              log.error("currClass was null");
+              return;
+          }
 
-        PsiMethod currMethod = PsiTreeUtil.getParentOfType(element, PsiMethod.class);
-        if (currMethod == null) {
-            log.error("currMethod was null");
-            return;
-        }
+          PsiMethod currMethod = PsiTreeUtil.getParentOfType(element, PsiMethod.class);
+          if (currMethod == null) {
+              log.error("currMethod was null");
+              return;
+          }
 
-        List<String> parameterTypes = extractParameterTypes(currMethod);
+          List<String> parameterTypes = extractParameterTypes(currMethod);
 
-        log.info("currClass {} currMethod {} parameterTypes {}", currClass.getName(), currMethod.getName(), parameterTypes);
+          log.info("currClass {} currMethod {} parameterTypes {}", currClass.getName(), currMethod.getName(), parameterTypes);
 
 //        TODO: what to do if there are multiple classes with the same name?
-        ClassMethod classMethod = new ClassMethod(currClass.getQualifiedName(), currClass.getName(), currMethod.getName(), parameterTypes);
+          ClassMethod classMethod =
+                  new ClassMethod(
+                          currClass.getQualifiedName(),
+                          currClass.getName(),
+                          currMethod.getName(),
+                          parameterTypes,
+                          currMethod.getReturnType() == null ? "void" : currMethod.getReturnType().getCanonicalText());
 
-        AppState.setCurrentClassMethod(classMethod);
+          AppState.setCurrentClassMethod(classMethod);
+          log.warn("classMethod: {}", classMethod.getMethodSignature());
 
-        FileStatusManager fileStatusManager = FileStatusManager.getInstance(project);
-        FileStatus status = fileStatusManager.getStatus(currPsiFile.getVirtualFile());
+          FileStatusManager fileStatusManager = FileStatusManager.getInstance(project);
+          FileStatus status = fileStatusManager.getStatus(currPsiFile.getVirtualFile());
 
-        if (!FileStatus.NOT_CHANGED.equals(status)) {
-            log.warn("adding re-infer for {}", classMethod.getQualifiedMethodName());
-            ReInferPriority.getInstance().addClassMethod(classMethod);
-        }
+          if (!FileStatus.NOT_CHANGED.equals(status)) {
+              log.warn("adding re-infer for {}", classMethod.getQualifiedMethodName());
+              ReInferPriority.getInstance().addClassMethod(classMethod);
+          }
 
-        log.warn("file status: {}", status);
-
+          log.warn("file status: {}", status);
+      } catch(Exception ex) {}
     }
 
     private List<String> extractParameterTypes(PsiMethod method) {
@@ -87,7 +95,7 @@ public class CaretPositionListener implements CaretListener {
         PsiParameter[] parameters = method.getParameterList().getParameters();
 
         for (int i = 0; i < parameters.length; i++) {
-            result.add(parameters[i].getType().getPresentableText());
+            result.add(parameters[i].getType().getCanonicalText());//.getPresentableText());
         }
 
         return result;

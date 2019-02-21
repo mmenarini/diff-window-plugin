@@ -1,11 +1,17 @@
 package edu.ucsd.getty;
 
+import com.intellij.openapi.project.Project;
+import edu.ucsd.AppState;
+import edu.ucsd.ClassMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -15,9 +21,11 @@ public class GettyInvariantsFilesRetriever {
     private static final String FILE_PREFIX = "_getty_inv_";
 
     private File gettyOutputDir;
+    private Project project;
 
-    public GettyInvariantsFilesRetriever(File gettyOutputDir) {
+    public GettyInvariantsFilesRetriever(File gettyOutputDir,Project project) {
         this.gettyOutputDir = gettyOutputDir;
+        this.project=project;
     }
 
     public Optional<List<File>> getFiles(String className) {
@@ -111,10 +119,18 @@ public class GettyInvariantsFilesRetriever {
         for (String paramType : parameterTypes) {
             paramString = paramString + paramType  + "-";
         }
+        if (paramString.length()>0)
+            paramString = paramString.substring(0,paramString.length()-1);
 
-        paramString = paramString.substring(0,paramString.length()-1);
+        StringBuilder fileParamString = new StringBuilder(split[i++]);
+        while (i<split.length){
+            if(split[i++].equals(""))
+                fileParamString.append("-").append(split[i++]);
+            else
+                break;
+        }
 
-        if (!StringUtils.equals(split[i], paramString)) {
+        if (!StringUtils.equals(fileParamString.toString(), paramString)) {
             return false;
         }
 
@@ -123,5 +139,27 @@ public class GettyInvariantsFilesRetriever {
 
     private static boolean isFileNameContainsHashCode(String fileName, String hashCode) {
         return fileName.contains(String.format("_%s_", hashCode));
+    }
+
+    public Optional<List<File>> getFiles(ClassMethod newClassMethod) {
+        if (AppState.headRepoDir==null)
+            return Optional.empty();
+        Path invBase = Paths.get(project.getBasePath()).resolve("build").resolve("invariants");
+        Path invHead = AppState.headRepoDir.resolve("build").resolve("invariants");
+
+        String[] lst = newClassMethod.getMethodSignature().split(" ");
+        if (lst.length==3) {
+            String filename = lst[2].substring(0,lst[2].length()-1)+".inv";
+            Path file1 = invBase
+                    .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
+                    .resolve(filename);
+            Path file2 = invHead
+                    .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
+                    .resolve(filename);
+
+            List<File> result = Arrays.asList(file1.toFile(), file2.toFile());
+            return Optional.of(result);
+        }
+        return Optional.empty();
     }
 }

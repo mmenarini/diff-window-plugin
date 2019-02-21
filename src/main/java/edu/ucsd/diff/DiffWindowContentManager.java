@@ -31,7 +31,7 @@ public class DiffWindowContentManager {
         this.toolWindow = toolWindow;
         GettyConstants gettyConstants = new GettyConstants(project);
 
-        this.gettyInvariantsFilesRetriever = new GettyInvariantsFilesRetriever(new File(gettyConstants.OUTPUT_DIR));
+        this.gettyInvariantsFilesRetriever = new GettyInvariantsFilesRetriever(new File(gettyConstants.OUTPUT_DIR), project);
 
         this.panelFactory = new PanelFactory(project);
 
@@ -55,7 +55,7 @@ public class DiffWindowContentManager {
         List<DiffTab> tabsList = new ArrayList<>();
 
         Optional<List<File>> filesOptional = gettyInvariantsFilesRetriever
-                .getFiles(newClassMethod.getClassName(), newClassMethod.getMethodName(), newClassMethod.getParameterTypes());
+                .getFiles(newClassMethod);//.getClassName(), newClassMethod.getMethodName(), newClassMethod.getParameterTypes());
 
         if (filesOptional.isPresent()) {
             tabsList = initTabsList(filesOptional.get(), newClassMethod);

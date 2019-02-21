@@ -1,5 +1,7 @@
 package edu.ucsd.getty;
 
+import edu.ucsd.AppState;
+import edu.ucsd.mmenarini.getty.GettyMainKt;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.SystemUtils;
 
@@ -7,6 +9,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -18,14 +22,14 @@ public class GettyRunner {
     private String pythonPath;
     private String projectBasePath;
 
-    public GettyRunner(String projectBasePath, String gettyPath, String pythonPath) {
-        log.warn("getty runner gettyPath {}, pythonPath {}", gettyPath, pythonPath);
+    public GettyRunner(String projectBasePath/*, String gettyPath, String pythonPath*/) {
+        //log.warn("getty runner gettyPath {}, pythonPath {}", gettyPath, pythonPath);
         this.projectBasePath = projectBasePath;
-        this.gettyPath = gettyPath;
-        this.pythonPath = pythonPath;
+//        this.gettyPath = gettyPath;
+//        this.pythonPath = pythonPath;
     }
 
-    public void run(String commitHashPre, String commitHashPost, String priorityFilePath) throws IOException {
+/*    public void run(String commitHashPre, String commitHashPost, String priorityFilePath) throws IOException {
         if (!isCorrectPythonVersion()) {
             throw new IllegalStateException("Wrong python version");
         }
@@ -58,6 +62,37 @@ public class GettyRunner {
 
         if (p.exitValue() != 0) {
             String cmd = String.format("%s %s %s %s %s", pythonPath, gettyPath, commitHashPre, commitHashPost, priorityFilePath);
+            logProcessErrorOutput(p, cmd, stdError);
+            throw new IllegalStateException("The csi script exited with value " + p.exitValue());
+        }
+    }*/
+
+    public void run(String methodSignature) throws IOException {
+        Path gitPath = Paths.get(projectBasePath);
+        AppState.headRepoDir = GettyMainKt.cloneGitHead(gitPath);
+
+        runGradleInvariants(methodSignature, AppState.headRepoDir);
+        runGradleInvariants(methodSignature, gitPath);
+
+    }
+
+    private void runGradleInvariants(String methodSignature, Path headRepoDir) throws IOException {
+        ProcessBuilder builder = new ProcessBuilder();
+        builder.command("./gradlew", "cleanDaikon", "cleanInvariants","invariants", "-PmethodSignature="+methodSignature, "--info");
+        builder.directory(headRepoDir.toFile());
+        builder.redirectErrorStream(true);
+
+        Process p = builder.start();
+        BufferedReader stdError = new BufferedReader(new
+                InputStreamReader(p.getInputStream()));
+
+//        TODO: show logs in DiffWindow
+        execService.submit(new Logger(stdError));
+
+        waitForProcessToComplete(p);
+
+        if (p.exitValue() != 0) {
+            String cmd = String.format("./gradlew cleanDaikon invariants");
             logProcessErrorOutput(p, cmd, stdError);
             throw new IllegalStateException("The csi script exited with value " + p.exitValue());
         }

@@ -1,8 +1,14 @@
 package edu.ucsd.reinfer;
 
+import com.intellij.ide.actions.runAnything.RunAnythingUtil;
+import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.playback.commands.ActionCommand;
+import com.intellij.openapi.util.ActionCallback;
+import edu.ucsd.AppState;
 import edu.ucsd.getty.GettyConstants;
 import edu.ucsd.getty.GettyRunner;
 import edu.ucsd.git.GitAdapter;
@@ -13,6 +19,7 @@ import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.awt.event.InputEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
@@ -42,10 +49,11 @@ public class ReInferAction extends AnAction {
 
     public void actionPerformed(AnActionEvent event) {
         log.warn("Reinferring {} size {}", reInferPriority.getPriorityList().toArray(), reInferPriority.getPriorityList().size());
-
+/*
         if (properties == null || properties.isRequiredFieldEmpty()) {
             propertiesService.showSetPropertiesDialog();
         }
+*/
 
         Project project = event.getProject();
         if (project != null) {
@@ -53,17 +61,21 @@ public class ReInferAction extends AnAction {
             Optional<File> priorityFileOptional = ReInferPriorityFileWriter.write(basePath, reInferPriority);
 
 
+            String methodSignature = AppState.method.getMethodSignature();
+
+            reInfer(project, methodSignature);
+
 //            if file present run Getty
-            priorityFileOptional.ifPresent(f -> {
-                log.warn("file path {}", f.getAbsolutePath());
-                reInfer(project, f);
-            });
+//            priorityFileOptional.ifPresent(f -> {
+//                log.warn("file path {}", f.getAbsolutePath());
+//                reInfer(project, f);
+//            });
 
         }
 
     }
 
-    private void reInfer(Project project, File priorityFile) {
+/*    private void reInfer(Project project, File priorityFile) {
         execService.submit(() -> {
             String projectPath = project.getBasePath();
 
@@ -109,7 +121,8 @@ public class ReInferAction extends AnAction {
             gettyRunner = new GettyRunner(gettyConstants.SOURCE_DIR, properties.getGettyPath(), properties.getPythonPath());
             try {
 //                TODO: move priority file to gettyConstants?
-                gettyRunner.run(hashOfParent, hashOfHead, priorityFile.getAbsolutePath());
+                //gettyRunner.run(hashOfParent, hashOfHead, priorityFile.getAbsolutePath());
+                gettyRunner.run();
             } catch (IOException e) {
                 log.error("Getty failed:", e);
             }
@@ -117,6 +130,37 @@ public class ReInferAction extends AnAction {
             //        todo: set app state to not currently re-inferring
         });
 
+//        todo: set app state to re-inferring
+
+    }*/
+
+private void runInvariantsTask() {
+    AnAction gradleAction = ActionManager.getInstance().getAction("Gradle.ExecuteTask");
+    InputEvent event = ActionCommand.getInputEvent("invariants");
+    ActionCallback callback = ActionManager.getInstance().tryToExecute(gradleAction, event, null, null, true);
+
+}
+
+    private void reInfer(Project project, String methodSignature) {
+        execService.submit(() -> {
+            String projectPath = project.getBasePath();
+
+            GettyConstants gettyConstants = new GettyConstants(project);
+
+            gettyRunner = new GettyRunner(projectPath);//(gettyConstants.SOURCE_DIR, properties.getGettyPath(), properties.getPythonPath());
+            try {
+//                TODO: move priority file to gettyConstants?
+                //gettyRunner.run(hashOfParent, hashOfHead, priorityFile.getAbsolutePath());
+                gettyRunner.run(methodSignature);
+
+                //runInvariantsTask();
+            } catch (IOException e) {
+                log.error("Getty failed:", e);
+            }
+
+            //        todo: set app state to not currently re-inferring
+
+        });
 //        todo: set app state to re-inferring
 
     }

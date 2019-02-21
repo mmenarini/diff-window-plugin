@@ -1,5 +1,6 @@
 package edu.ucsd;
 
+import edu.ucsd.mmenarini.getty.GettyMainKt;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -10,14 +11,20 @@ import java.util.List;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class ClassMethod {
-    private String qualifiedClassName;
-    private String className;
-    private String methodName;
-    private List<String> parameterTypes;
+    public String qualifiedClassName;
+    public String className;
+    public String methodName;
+    public List<String> parameterTypes;
+    public String returnType;
 
     public String getQualifiedMethodName() {
         return qualifiedClassName +
                 ":" +
                 methodName;
     }
+
+    public String getMethodSignature() {
+        return GettyMainKt.createSignature(this);
+    }
+
 }

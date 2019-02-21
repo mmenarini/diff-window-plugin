@@ -1,12 +1,16 @@
 plugins {
-    id 'org.jetbrains.intellij' version '0.3.1'
-    id 'io.franzbecker.gradle-lombok' version '1.13'
+//    id 'org.jetbrains.intellij' version '0.3.1'
+//    id 'io.franzbecker.gradle-lombok' version '1.13'
+    id 'org.jetbrains.intellij' version '0.4.3'
+    id 'io.franzbecker.gradle-lombok' version '2.1'
+    id 'java'
+    id "org.jetbrains.kotlin.jvm" version "1.3.11"
 }
 
 group 'edu.ucsd'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'java'
+//apply plugin: 'java'
 
 sourceCompatibility = 1.8
 
@@ -15,20 +19,26 @@ repositories {
 }
 
 dependencies {
+    compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
     compile group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.1.12'
     compile group: 'org.codehaus.jackson', name: 'jackson-mapper-asl', version: '1.9.13'
     compile group: 'com.github.fracpete', name: 'rsync4j-all', version:'3.1.2-9'
-    compile(group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '4.11.0.201803080745-r') {
+    //compile(group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '4.11.0.201803080745-r') {
+    compile(group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '5.2.0.201812061821-r') {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
+    compile 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
     testCompile group: 'org.jmockit', name: 'jmockit', version: '1.39'
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
 intellij {
-    version '2018.1.1'
+    version '2018.3.4'
+    sandboxDirectory = "$project.buildDir/myCustom-sandbox"
 }
-
+tasks.wrapper {
+    gradleVersion = 5.2
+}
 patchPluginXml {
     changeNotes """
       Add change notes here.<br>
