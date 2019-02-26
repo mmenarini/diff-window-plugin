@@ -1,5 +1,6 @@
 package edu.ucsd;
 
+import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.CaretListener;

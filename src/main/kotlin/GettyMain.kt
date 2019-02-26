@@ -53,7 +53,6 @@ fun cloneRepo(destPath: Path, srcPath: Path, hash: String) {
                         .setName(hash)
                         .call()
             }
-    buildRepo(destPath, hash)
 }
 
 
@@ -248,6 +247,7 @@ fun createSignature(cm : ClassMethod):String {
             "(${cm.parameterTypes.joinToString(",")})>"
 }
 
+const val strPluginRef = "includeBuild '../InvariantsPluginGradle'"
 fun cloneGitHead(repoDir: Path):Path {
     val repoBuilder = FileRepositoryBuilder()
     try {
@@ -264,11 +264,23 @@ fun cloneGitHead(repoDir: Path):Path {
 
         val hash0 = repository.resolve("HEAD").name()
         val hash0Path = workDir.resolve("git_$hash0")
-        if (Files.notExists(hash0Path))
+        if (Files.notExists(hash0Path)) {
             cloneRepo(hash0Path, repoDir, hash0)
+            //TMP Fix for plugin not in repo
+            val settingsFile = hash0Path.resolve("settings.gradle").toFile()
+            val inLines = settingsFile.bufferedReader().readLines()
+            if (inLines.contains(strPluginRef)) {
+                val outArr = inLines.toTypedArray()
+                outArr[inLines.indexOf(strPluginRef)] = "includeBuild '../../InvariantsPluginGradle'"
+                settingsFile.bufferedWriter().use { it.write(outArr.joinToString(System.lineSeparator())) }
+            }
+            //buildRepo(hash0Path, hash0)
+        }
         repository.close()
         return hash0Path
     } catch (ex: IOException) {
         throw ParseException("Defined Git Directory $repoDir does not contain a valid git repository")
+    } catch (ex: Throwable) {
+        throw ParseException(ex.message)
     }
 }

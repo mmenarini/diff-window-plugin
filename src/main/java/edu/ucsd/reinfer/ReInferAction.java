@@ -5,10 +5,12 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.playback.commands.ActionCommand;
 import com.intellij.openapi.util.ActionCallback;
 import edu.ucsd.AppState;
+import edu.ucsd.ClassMethod;
 import edu.ucsd.getty.GettyConstants;
 import edu.ucsd.getty.GettyRunner;
 import edu.ucsd.git.GitAdapter;
@@ -18,6 +20,7 @@ import edu.ucsd.rsync.RsyncAdapter;
 import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.plugins.gradle.tooling.ModelBuilderService;
 
 import java.awt.event.InputEvent;
 import java.io.File;
@@ -57,13 +60,11 @@ public class ReInferAction extends AnAction {
 
         Project project = event.getProject();
         if (project != null) {
-            String basePath = StringUtils.defaultIfEmpty(project.getBasePath(), "");
-            Optional<File> priorityFileOptional = ReInferPriorityFileWriter.write(basePath, reInferPriority);
+//            String basePath = StringUtils.defaultIfEmpty(project.getBasePath(), "");
+//            Optional<File> priorityFileOptional = ReInferPriorityFileWriter.write(basePath, reInferPriority);
 
 
-            String methodSignature = AppState.method.getMethodSignature();
-
-            reInfer(project, methodSignature);
+            reInfer(project, AppState.method);
 
 //            if file present run Getty
 //            priorityFileOptional.ifPresent(f -> {
@@ -134,24 +135,25 @@ public class ReInferAction extends AnAction {
 
     }*/
 
-private void runInvariantsTask() {
+/*private void runInvariantsTask() {
     AnAction gradleAction = ActionManager.getInstance().getAction("Gradle.ExecuteTask");
     InputEvent event = ActionCommand.getInputEvent("invariants");
     ActionCallback callback = ActionManager.getInstance().tryToExecute(gradleAction, event, null, null, true);
 
-}
+}*/
 
-    private void reInfer(Project project, String methodSignature) {
+    private void reInfer(Project project, ClassMethod /*String*/ method) {
         execService.submit(() -> {
             String projectPath = project.getBasePath();
 
             GettyConstants gettyConstants = new GettyConstants(project);
-
-            gettyRunner = new GettyRunner(projectPath);//(gettyConstants.SOURCE_DIR, properties.getGettyPath(), properties.getPythonPath());
+            gettyRunner = new GettyRunner(
+                    project,
+                    projectPath);//(gettyConstants.SOURCE_DIR, properties.getGettyPath(), properties.getPythonPath());
             try {
 //                TODO: move priority file to gettyConstants?
                 //gettyRunner.run(hashOfParent, hashOfHead, priorityFile.getAbsolutePath());
-                gettyRunner.run(methodSignature);
+                gettyRunner.run(method);
 
                 //runInvariantsTask();
             } catch (IOException e) {

@@ -1,21 +1,24 @@
 <idea-plugin>
-    <id>org.jetbrains</id>
-    <name>my_plugin</name>
+    <id>edu.ucsd.invariants</id>
+    <name>Invariants</name>
     <version>0.0.1</version>
-    <vendor email="dummy" url="dummy">dummy</vendor>
+    <vendor email="mmenarini@ucsd.edu" url="dummy">UCSD</vendor>
 
-    <description><![CDATA[
-      Sample plugin.<br>
-    ]]></description>
+    <description>
+        <![CDATA[
+      Differential Invariants Analysis Plugin.<br>
+        ]]>
+    </description>
 
     <change-notes><![CDATA[
-      Release 0.0.1: Initial release.<br>
+      Release 0.0.1: Needs the gradle invariants plugin added to the project.<br>
     ]]>
     </change-notes>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="162"/>
+    <idea-version since-build="183"/>
 
+    <depends>org.jetbrains.plugins.gradle</depends>
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <!-- uncomment to enable plugin in all products
@@ -27,6 +30,12 @@
             <implementation-class>edu.ucsd.InitializePlugin</implementation-class>
         </component>
     </application-components>
+
+    <project-components>
+        <component>
+            <implementation-class>edu.ucsd.AutoRunInvariantsComponent</implementation-class>
+        </component>
+    </project-components>
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="DiffToolWindow" anchor="bottom"

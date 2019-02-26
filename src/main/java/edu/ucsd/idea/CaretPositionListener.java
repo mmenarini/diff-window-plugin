@@ -74,18 +74,22 @@ public class CaretPositionListener implements CaretListener {
                           parameterTypes,
                           currMethod.getReturnType() == null ? "void" : currMethod.getReturnType().getCanonicalText());
 
-          AppState.setCurrentClassMethod(classMethod);
-          log.warn("classMethod: {}", classMethod.getMethodSignature());
+          if (AppState.method==null || !classMethod.getMethodSignature().equals(AppState.method.getMethodSignature())) {
+              AppState.setCurrentClassMethod(classMethod);
+              log.warn("classMethod: {}", classMethod.getMethodSignature());
 
-          FileStatusManager fileStatusManager = FileStatusManager.getInstance(project);
-          FileStatus status = fileStatusManager.getStatus(currPsiFile.getVirtualFile());
+/*
+              FileStatusManager fileStatusManager = FileStatusManager.getInstance(project);
+              FileStatus status = fileStatusManager.getStatus(currPsiFile.getVirtualFile());
 
-          if (!FileStatus.NOT_CHANGED.equals(status)) {
-              log.warn("adding re-infer for {}", classMethod.getQualifiedMethodName());
-              ReInferPriority.getInstance().addClassMethod(classMethod);
+              if (!FileStatus.NOT_CHANGED.equals(status)) {
+                  log.warn("adding re-infer for {}", classMethod.getQualifiedMethodName());
+                  ReInferPriority.getInstance().addClassMethod(classMethod);
+              }
+
+              log.warn("file status: {}", status);
+*/
           }
-
-          log.warn("file status: {}", status);
       } catch(Exception ex) {}
     }
 

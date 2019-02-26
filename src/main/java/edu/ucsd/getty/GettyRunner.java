@@ -1,9 +1,16 @@
 package edu.ucsd.getty;
 
+import com.intellij.execution.RunManagerEx;
+import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.project.Project;
 import edu.ucsd.AppState;
+import edu.ucsd.ClassMethod;
 import edu.ucsd.mmenarini.getty.GettyMainKt;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.SystemUtils;
+import org.jetbrains.plugins.gradle.action.GradleExecuteTaskAction;
+import org.jetbrains.plugins.gradle.tooling.ModelBuilderService;
+import org.jetbrains.plugins.gradle.util.GradleUtil;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -21,10 +28,12 @@ public class GettyRunner {
     private String gettyPath;
     private String pythonPath;
     private String projectBasePath;
+    private Project project;
 
-    public GettyRunner(String projectBasePath/*, String gettyPath, String pythonPath*/) {
+    public GettyRunner(Project project, String projectBasePath/*, String gettyPath, String pythonPath*/) {
         //log.warn("getty runner gettyPath {}, pythonPath {}", gettyPath, pythonPath);
         this.projectBasePath = projectBasePath;
+        this.project = project;
 //        this.gettyPath = gettyPath;
 //        this.pythonPath = pythonPath;
     }
@@ -67,16 +76,30 @@ public class GettyRunner {
         }
     }*/
 
-    public void run(String methodSignature) throws IOException {
+    public static void cloneRepository(String projectBasePath){
         Path gitPath = Paths.get(projectBasePath);
         AppState.headRepoDir = GettyMainKt.cloneGitHead(gitPath);
+    }
 
-        runGradleInvariants(methodSignature, AppState.headRepoDir);
-        runGradleInvariants(methodSignature, gitPath);
+    public void run(ClassMethod /*String*/ method) throws IOException {
+        cloneRepository(projectBasePath);
+
+        runGradleInvariants(method.getMethodSignature(), AppState.headRepoDir);
+        runGradleInvariants(method.getMethodSignature(), Paths.get(projectBasePath));
+        AppState.setCurrentClassMethod(method);
+        //runGradleInvariantsOnProject(method);
 
     }
 
-    private void runGradleInvariants(String methodSignature, Path repoDir) throws IOException {
+    private void runGradleInvariantsOnProject(String methodSignature) throws IOException {
+        GradleExecuteTaskAction.runGradle(
+                project,
+                null,
+                Paths.get(projectBasePath).toAbsolutePath().toString(),
+                "invariants -PmethodSignature=\""+methodSignature + "\""
+        );
+
+/*
         ProcessBuilder builder = new ProcessBuilder();
 //        builder.command(
 //                "./gradlew","cleanTest", "cleanCallgraph", "cleanDaikon", "cleanInvariants","invariants",
@@ -84,6 +107,36 @@ public class GettyRunner {
         builder.command(
                 "./gradlew","cleanTest", "invariants",
                 "-PmethodSignature="+methodSignature);
+        builder.directory(AppState.headRepoDir.toFile());
+        builder.redirectErrorStream(true);
+
+        Process p = builder.start();
+        BufferedReader stdError = new BufferedReader(new
+                InputStreamReader(p.getInputStream()));
+
+//        TODO: show logs in DiffWindow
+        execService.submit(new Logger(stdError));*/
+
+        /*waitForProcessToComplete(p);
+
+        if (p.exitValue() != 0) {
+            String cmd = String.format("./gradlew cleanDaikon invariants");
+            logProcessErrorOutput(p, cmd, stdError);
+            throw new IllegalStateException("The csi script exited with value " + p.exitValue());
+        }*/
+    }
+
+    private void runGradleInvariants(String methodSignature, Path repoDir) throws IOException {
+        ProcessBuilder builder = new ProcessBuilder();
+//        builder.command(
+//                "./gradlew","cleanTest", "cleanCallgraph", "cleanDaikon", "cleanInvariants","invariants",
+//                "-PmethodSignature="+methodSignature, "--info", "--stacktrace");
+//        builder.command(
+//                "./gradlew", "invariants",
+//                "-PmethodSignature="+methodSignature);
+        builder.command(
+                "./gradlew", "invariants",
+                "-PmethodSignature="+methodSignature, "--info", "--stacktrace");
         builder.directory(repoDir.toFile());
         builder.redirectErrorStream(true);
 
@@ -97,7 +150,7 @@ public class GettyRunner {
         waitForProcessToComplete(p);
 
         if (p.exitValue() != 0) {
-            String cmd = String.format("./gradlew cleanDaikon invariants");
+            String cmd = String.format("./gradlew cleanDaikon invariants --stacktrace");
             logProcessErrorOutput(p, cmd, stdError);
             throw new IllegalStateException("The csi script exited with value " + p.exitValue());
         }

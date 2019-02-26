@@ -35,6 +35,7 @@ dependencies {
 intellij {
     version '2018.3.4'
     sandboxDirectory = "$project.buildDir/myCustom-sandbox"
+    plugins 'gradle'
 }
 tasks.wrapper {
     gradleVersion = 5.2
