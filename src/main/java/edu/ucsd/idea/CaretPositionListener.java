@@ -1,5 +1,6 @@
 package edu.ucsd.idea;
 
+import com.intellij.lang.PsiBuilderUtil;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.event.CaretEvent;
@@ -9,24 +10,33 @@ import com.intellij.openapi.ui.DialogBuilder;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.psi.*;
+import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.PsiUtil;
 import edu.ucsd.AppState;
 import edu.ucsd.ClassMethod;
+import edu.ucsd.getty.GettyRunner;
 import edu.ucsd.properties.PropertiesForm;
 import edu.ucsd.reinfer.ReInferPriority;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Slf4j
 public class CaretPositionListener implements CaretListener {
-
+    private long modCount=-1;
+    private ExecutorService execService = Executors.newFixedThreadPool(1);
+    private GettyRunner gettyRunner;
+    private PsiFile lastPsiFile=null;
+    //private boolean hadError = true;
     @Override
     public void caretPositionChanged(CaretEvent e) {
       try {
-          log.info("position changed from {} to {}", e.getOldPosition(), e.getNewPosition());
-
+          log.debug("position changed from {} to {}", e.getOldPosition(), e.getNewPosition());
 //        Find current class and method and update the AppState
 
           Editor currEditor = e.getEditor();
@@ -40,6 +50,16 @@ public class CaretPositionListener implements CaretListener {
           if (currPsiFile == null) {
               log.error("currPsiFile was null");
               return;
+          }
+
+          if(currPsiFile!=lastPsiFile) {
+            lastPsiFile = currPsiFile ;
+            //hadError=true;
+            modCount = -1;
+            String projectPath = project.getBasePath();
+            gettyRunner = new GettyRunner(
+                  project,
+                  projectPath);
           }
 
           Caret caret = e.getCaret();
@@ -60,6 +80,8 @@ public class CaretPositionListener implements CaretListener {
               log.error("currMethod was null");
               return;
           }
+          //If indexes are being built fail early;
+          currMethod.getReturnType().getCanonicalText();
 
           List<String> parameterTypes = extractParameterTypes(currMethod);
 
@@ -72,7 +94,25 @@ public class CaretPositionListener implements CaretListener {
                           currClass.getName(),
                           currMethod.getName(),
                           parameterTypes,
-                          currMethod.getReturnType() == null ? "void" : currMethod.getReturnType().getCanonicalText());
+                          currMethod.getReturnType() == null ? "void" : currMethod.getReturnType().getCanonicalText(),
+                          currPsiFile);
+
+//          long curModCount = currPsiFile.getManager().getModificationTracker().getModificationCount();
+//          boolean curError = PsiTreeUtil.hasErrorElements(currPsiFile);
+//          if(!curError && curModCount>modCount){
+//              modCount = curModCount;
+//              execService.submit(() -> {
+//                  try {
+//                      if (classMethod.getMethodSignature()!=null) {
+//                          gettyRunner.run(classMethod);
+//                          AppState.setCurrentClassMethod(classMethod);
+//                      }
+//                  } catch (IOException ex) {
+//                      log.error("Getty failed:", ex);
+//                  }
+//              });
+//          }
+
 
           if (AppState.method==null || !classMethod.getMethodSignature().equals(AppState.method.getMethodSignature())) {
               AppState.setCurrentClassMethod(classMethod);
@@ -90,7 +130,9 @@ public class CaretPositionListener implements CaretListener {
               log.warn("file status: {}", status);
 */
           }
-      } catch(Exception ex) {}
+      } catch(Exception ex) {
+          log.debug(ex.getMessage(), ex);
+      }
     }
 
     private List<String> extractParameterTypes(PsiMethod method) {

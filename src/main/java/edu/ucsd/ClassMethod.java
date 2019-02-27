@@ -1,5 +1,6 @@
 package edu.ucsd;
 
+import com.intellij.psi.PsiFile;
 import edu.ucsd.mmenarini.getty.GettyMainKt;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -16,6 +17,7 @@ public class ClassMethod {
     public String methodName;
     public List<String> parameterTypes;
     public String returnType;
+    public PsiFile declaringFile;
 
     public String getQualifiedMethodName() {
         return qualifiedClassName +
