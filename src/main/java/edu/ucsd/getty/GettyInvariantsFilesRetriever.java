@@ -6,6 +6,7 @@ import edu.ucsd.ClassMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -141,15 +142,23 @@ public class GettyInvariantsFilesRetriever {
         return fileName.contains(String.format("_%s_", hashCode));
     }
 
+    public static Path getHeadRepoInvarinatFilePath(ClassMethod newClassMethod) {
+        String[] lst = newClassMethod.getMethodSignature().split(" ");
+        if (lst.length!=3) return null;
+        String filename = getInvFilenameFromSignaturePart(lst[2]);
+        Path invHead = AppState.headRepoDir.resolve("build").resolve("invariants");
+        return invHead
+                .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
+                .resolve(filename);
+    }
     public Optional<List<File>> getFiles(ClassMethod newClassMethod) {
         if (AppState.headRepoDir==null)
             return Optional.empty();
-        Path invBase = Paths.get(project.getBasePath()).resolve("build").resolve("invariants");
-        Path invHead = AppState.headRepoDir.resolve("build").resolve("invariants");
-
         String[] lst = newClassMethod.getMethodSignature().split(" ");
         if (lst.length==3) {
-            String filename = lst[2].substring(0,lst[2].length()-1)+".inv";
+            String filename = getInvFilenameFromSignaturePart(lst[2]);
+            Path invBase = Paths.get(project.getBasePath()).resolve("build").resolve("invariants");
+            Path invHead = AppState.headRepoDir.resolve("build").resolve("invariants");
             Path filePre = invHead
                     .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
                     .resolve(filename);
@@ -161,5 +170,10 @@ public class GettyInvariantsFilesRetriever {
             return Optional.of(result);
         }
         return Optional.empty();
+    }
+
+    @NotNull
+    private static String getInvFilenameFromSignaturePart(String s) {
+        return s.substring(0, s.length()-1)+".inv";
     }
 }

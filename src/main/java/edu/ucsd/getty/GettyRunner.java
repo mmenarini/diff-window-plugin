@@ -16,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
@@ -82,15 +83,25 @@ public class GettyRunner {
     }
 
     public void run(ClassMethod /*String*/ method) throws IOException {
-        cloneRepository(projectBasePath);
 
-        runGradleInvariants(method.getMethodSignature(), AppState.headRepoDir);
-        runGradleInvariants(method.getMethodSignature(), Paths.get(projectBasePath));
-        AppState.setCurrentClassMethod(method);
+        cloneRepository(projectBasePath);
+        //TODO change to a config option
+        String daikonDir = System.getenv("DAIKONDIR");
+        Path daikonJar=null;
+        if (daikonDir!=null)
+            daikonJar = Paths.get(daikonDir).resolve("daikon.jar");
+        String daikonJarPath = null;
+        if (daikonJar!=null && Files.exists(daikonJar))
+            daikonJarPath = daikonJar.toAbsolutePath().toString();
+        if (Files.notExists(GettyInvariantsFilesRetriever.getHeadRepoInvarinatFilePath(method)))
+            runGradleInvariants(method.getMethodSignature(), AppState.headRepoDir, daikonJarPath);
+        runGradleInvariants(method.getMethodSignature(), Paths.get(projectBasePath), daikonJarPath);
+        AppState.triggerObservables();
         //runGradleInvariantsOnProject(method);
 
     }
 
+    //Not using this because it would change the focus to the run window
     private void runGradleInvariantsOnProject(String methodSignature) throws IOException {
         GradleExecuteTaskAction.runGradle(
                 project,
@@ -98,45 +109,26 @@ public class GettyRunner {
                 Paths.get(projectBasePath).toAbsolutePath().toString(),
                 "invariants -PmethodSignature=\""+methodSignature + "\""
         );
-
-/*
-        ProcessBuilder builder = new ProcessBuilder();
-//        builder.command(
-//                "./gradlew","cleanTest", "cleanCallgraph", "cleanDaikon", "cleanInvariants","invariants",
-//                "-PmethodSignature="+methodSignature, "--info", "--stacktrace");
-        builder.command(
-                "./gradlew","cleanTest", "invariants",
-                "-PmethodSignature="+methodSignature);
-        builder.directory(AppState.headRepoDir.toFile());
-        builder.redirectErrorStream(true);
-
-        Process p = builder.start();
-        BufferedReader stdError = new BufferedReader(new
-                InputStreamReader(p.getInputStream()));
-
-//        TODO: show logs in DiffWindow
-        execService.submit(new Logger(stdError));*/
-
-        /*waitForProcessToComplete(p);
-
-        if (p.exitValue() != 0) {
-            String cmd = String.format("./gradlew cleanDaikon invariants");
-            logProcessErrorOutput(p, cmd, stdError);
-            throw new IllegalStateException("The csi script exited with value " + p.exitValue());
-        }*/
     }
 
-    private void runGradleInvariants(String methodSignature, Path repoDir) throws IOException {
+    private void runGradleInvariants(String methodSignature, Path repoDir, String daikonJarPath) throws IOException {
         ProcessBuilder builder = new ProcessBuilder();
+        if (daikonJarPath==null) {
+            builder.command(
+                    "./gradlew", "invariants",
+                    "-PmethodSignature=" + methodSignature);
+        } else {
+            builder.command(
+                    "./gradlew", "invariants",
+                    "-PmethodSignature=" + methodSignature,
+                    "-PdaikonJarFile=" + daikonJarPath);
+        }
 //        builder.command(
 //                "./gradlew","cleanTest", "cleanCallgraph", "cleanDaikon", "cleanInvariants","invariants",
 //                "-PmethodSignature="+methodSignature, "--info", "--stacktrace");
 //        builder.command(
 //                "./gradlew", "invariants",
-//                "-PmethodSignature="+methodSignature);
-        builder.command(
-                "./gradlew", "invariants",
-                "-PmethodSignature="+methodSignature, "--info", "--stacktrace");
+//                "-PmethodSignature="+methodSignature, "--info", "--stacktrace");
         builder.directory(repoDir.toFile());
         builder.redirectErrorStream(true);
 

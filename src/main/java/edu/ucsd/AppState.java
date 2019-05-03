@@ -13,7 +13,10 @@ public class AppState {
     public static Observable<ClassMethod> getCurrentClassMethodObservable() {
         return currentClassMethod;
     }
-
+    public static void triggerObservables() {
+        if (method!=null)
+            currentClassMethod.onNext(method);
+    }
     public static void setCurrentClassMethod(ClassMethod classMethod) {
         method = classMethod;
         currentClassMethod.onNext(classMethod);
