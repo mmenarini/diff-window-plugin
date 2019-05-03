@@ -45,6 +45,7 @@ public class DiffWindow {
     }
 
     public void removeSelfFromToolWindow() {
+
         tabsMap.values().forEach(t -> toolWindow.getContentManager().removeContent(t.getContent(), true));
     }
 
