@@ -110,11 +110,12 @@ public class DiffWindowContentManager {
 //            TODO: base pre/post on hash instead of index
             if (!(files.get(0).exists() && files.get(1).exists()))
                 execService.submit(() -> {
-                    try {
-                        gettyRunner.run(newClassMethod);
-                    } catch (IOException e) {
-                        log.error("Getty failed:", e);
-                    }
+                   // try {
+                        //TODO: Reenable when performance issue on MAC solved
+                        //gettyRunner.run(newClassMethod);
+                   // } catch (IOException e) {
+                   //     log.error("Getty failed:", e);
+                   // }
                 });
 
             Optional<String> pre = FileReader.readFileAsString(files.get(0));
