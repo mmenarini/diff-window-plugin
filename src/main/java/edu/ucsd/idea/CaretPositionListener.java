@@ -88,13 +88,30 @@ public class CaretPositionListener implements CaretListener {
           log.info("currClass {} currMethod {} parameterTypes {}", currClass.getName(), currMethod.getName(), parameterTypes);
 
 //        TODO: what to do if there are multiple classes with the same name?
+          String retType = currMethod.getReturnType().getCanonicalText();
+          if (retType==null)
+              retType="void";
+          else
+              switch (retType) {
+                  case "byte":
+                  case "short":
+                  case "int":
+                  case "long":
+                  case "float":
+                  case "double":
+                  case "char":
+                  case "boolean":
+                      retType="java.lang."+retType;
+              }
+
+
           ClassMethod classMethod =
                   new ClassMethod(
                           currClass.getQualifiedName(),
                           currClass.getName(),
                           currMethod.getName(),
                           parameterTypes,
-                          currMethod.getReturnType() == null ? "void" : currMethod.getReturnType().getCanonicalText(),
+                          retType,
                           currPsiFile);
 
 //          long curModCount = currPsiFile.getManager().getModificationTracker().getModificationCount();
