@@ -16,12 +16,14 @@ import com.intellij.psi.util.PsiUtil;
 import edu.ucsd.AppState;
 import edu.ucsd.ClassMethod;
 import edu.ucsd.getty.GettyRunner;
+import edu.ucsd.mmenarini.getty.GettyMainKt;
 import edu.ucsd.properties.PropertiesForm;
 import edu.ucsd.reinfer.ReInferPriority;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -89,29 +91,52 @@ public class CaretPositionListener implements CaretListener {
 
 //        TODO: what to do if there are multiple classes with the same name?
           String retType = currMethod.getReturnType().getCanonicalText();
-          if (retType==null)
-              retType="void";
-          else
-              switch (retType) {
-                  case "byte":
-                  case "short":
-                  case "int":
-                  case "long":
-                  case "float":
-                  case "double":
-                  case "char":
-                  case "boolean":
-                      retType="java.lang."+retType;
-              }
 
+          public String getFullReturnType() {
+              if (retType==null)
+                  retType="void";
+              else
+                  switch (retType) {
+                      case "byte":
+                      case "short":
+                      case "int":
+                      case "long":
+                      case "float":
+                      case "double":
+                      case "char":
+                      case "boolean":
+                          retType="java.lang."+retType;
+                  }
+          }
+
+          Iterator<String> parameterTypesIterator = parameterTypes.iterator();
+          public List<String> getFullParameterType() {
+              while (parameterTypesIterator.hasNext()) {
+                  String paramType = parameterTypesIterator.next();
+                  if (paramType == null)
+                      paramType = "void";
+                  else
+                      switch (paramType) {
+                          case "byte":
+                          case "short":
+                          case "int":
+                          case "long":
+                          case "float":
+                          case "double":
+                          case "char":
+                          case "boolean":
+                              paramType = "java.lang." + paramType;
+                      }
+              }
+          }
 
           ClassMethod classMethod =
                   new ClassMethod(
                           currClass.getQualifiedName(),
                           currClass.getName(),
                           currMethod.getName(),
-                          parameterTypes,
-                          retType,
+                          parameterTypes.getFullParameterType(),
+                          retType.getFullReturnType(),
                           currPsiFile);
 
 //          long curModCount = currPsiFile.getManager().getModificationTracker().getModificationCount();
@@ -129,7 +154,6 @@ public class CaretPositionListener implements CaretListener {
 //                  }
 //              });
 //          }
-
 
           if (AppState.method==null || !classMethod.getMethodSignature().equals(AppState.method.getMethodSignature())) {
               AppState.setCurrentClassMethod(classMethod);
