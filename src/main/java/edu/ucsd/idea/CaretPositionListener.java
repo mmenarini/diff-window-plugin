@@ -16,12 +16,14 @@ import com.intellij.psi.util.PsiUtil;
 import edu.ucsd.AppState;
 import edu.ucsd.ClassMethod;
 import edu.ucsd.getty.GettyRunner;
+import edu.ucsd.mmenarini.getty.GettyMainKt;
 import edu.ucsd.properties.PropertiesForm;
 import edu.ucsd.reinfer.ReInferPriority;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,6 +35,26 @@ public class CaretPositionListener implements CaretListener {
     private GettyRunner gettyRunner;
     private PsiFile lastPsiFile=null;
     //private boolean hadError = true;
+
+
+    public String getFullReturnType(String input) {
+        if (input==null)
+            input="void";
+        else
+            switch (input) {
+                case "byte":
+                case "short":
+                case "int":
+                case "long":
+                case "float":
+                case "double":
+                case "char":
+                case "boolean":
+                    input="java.lang."+input;
+            }
+        return input;
+    }
+
     @Override
     public void caretPositionChanged(CaretEvent e) {
       try {
@@ -83,27 +105,17 @@ public class CaretPositionListener implements CaretListener {
           //If indexes are being built fail early;
           currMethod.getReturnType().getCanonicalText();
 
-          List<String> parameterTypes = extractParameterTypes(currMethod);
+          ArrayList<String> parameterTypes = extractParameterTypes(currMethod);
+          for (int index = 0; index < parameterTypes.size(); index++) {
+              String paramType = parameterTypes.get(index);
+              parameterTypes.set(index, getFullReturnType(paramType));
+          }
 
           log.info("currClass {} currMethod {} parameterTypes {}", currClass.getName(), currMethod.getName(), parameterTypes);
 
 //        TODO: what to do if there are multiple classes with the same name?
           String retType = currMethod.getReturnType().getCanonicalText();
-          if (retType==null)
-              retType="void";
-          else
-              switch (retType) {
-                  case "byte":
-                  case "short":
-                  case "int":
-                  case "long":
-                  case "float":
-                  case "double":
-                  case "char":
-                  case "boolean":
-                      retType="java.lang."+retType;
-              }
-
+          String fullRetType = getFullReturnType(retType);
 
           ClassMethod classMethod =
                   new ClassMethod(
@@ -111,7 +123,7 @@ public class CaretPositionListener implements CaretListener {
                           currClass.getName(),
                           currMethod.getName(),
                           parameterTypes,
-                          retType,
+                          fullRetType,
                           currPsiFile);
 
 //          long curModCount = currPsiFile.getManager().getModificationTracker().getModificationCount();
@@ -129,7 +141,6 @@ public class CaretPositionListener implements CaretListener {
 //                  }
 //              });
 //          }
-
 
           if (AppState.method==null || !classMethod.getMethodSignature().equals(AppState.method.getMethodSignature())) {
               AppState.setCurrentClassMethod(classMethod);
@@ -152,8 +163,8 @@ public class CaretPositionListener implements CaretListener {
       }
     }
 
-    private List<String> extractParameterTypes(PsiMethod method) {
-        List<String> result = new ArrayList<>();
+    private ArrayList<String> extractParameterTypes(PsiMethod method) {
+        ArrayList<String> result = new ArrayList<>();
 
         PsiParameter[] parameters = method.getParameterList().getParameters();
 
