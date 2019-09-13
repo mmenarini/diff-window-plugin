@@ -35,6 +35,26 @@ public class CaretPositionListener implements CaretListener {
     private GettyRunner gettyRunner;
     private PsiFile lastPsiFile=null;
     //private boolean hadError = true;
+
+
+    public String getFullReturnType(String input) {
+        if (input==null)
+            input="void";
+        else
+            switch (input) {
+                case "byte":
+                case "short":
+                case "int":
+                case "long":
+                case "float":
+                case "double":
+                case "char":
+                case "boolean":
+                    input="java.lang."+input;
+            }
+        return input;
+    }
+
     @Override
     public void caretPositionChanged(CaretEvent e) {
       try {
@@ -85,58 +105,25 @@ public class CaretPositionListener implements CaretListener {
           //If indexes are being built fail early;
           currMethod.getReturnType().getCanonicalText();
 
-          List<String> parameterTypes = extractParameterTypes(currMethod);
+          ArrayList<String> parameterTypes = extractParameterTypes(currMethod);
+          for (int index = 0; index < parameterTypes.size(); index++) {
+              String paramType = parameterTypes.get(index);
+              parameterTypes.set(index, getFullReturnType(paramType));
+          }
 
           log.info("currClass {} currMethod {} parameterTypes {}", currClass.getName(), currMethod.getName(), parameterTypes);
 
 //        TODO: what to do if there are multiple classes with the same name?
           String retType = currMethod.getReturnType().getCanonicalText();
-
-          public String getFullReturnType() {
-              if (retType==null)
-                  retType="void";
-              else
-                  switch (retType) {
-                      case "byte":
-                      case "short":
-                      case "int":
-                      case "long":
-                      case "float":
-                      case "double":
-                      case "char":
-                      case "boolean":
-                          retType="java.lang."+retType;
-                  }
-          }
-
-          Iterator<String> parameterTypesIterator = parameterTypes.iterator();
-          public List<String> getFullParameterType() {
-              while (parameterTypesIterator.hasNext()) {
-                  String paramType = parameterTypesIterator.next();
-                  if (paramType == null)
-                      paramType = "void";
-                  else
-                      switch (paramType) {
-                          case "byte":
-                          case "short":
-                          case "int":
-                          case "long":
-                          case "float":
-                          case "double":
-                          case "char":
-                          case "boolean":
-                              paramType = "java.lang." + paramType;
-                      }
-              }
-          }
+          String fullRetType = getFullReturnType(retType);
 
           ClassMethod classMethod =
                   new ClassMethod(
                           currClass.getQualifiedName(),
                           currClass.getName(),
                           currMethod.getName(),
-                          parameterTypes.getFullParameterType(),
-                          retType.getFullReturnType(),
+                          parameterTypes,
+                          fullRetType,
                           currPsiFile);
 
 //          long curModCount = currPsiFile.getManager().getModificationTracker().getModificationCount();
@@ -176,8 +163,8 @@ public class CaretPositionListener implements CaretListener {
       }
     }
 
-    private List<String> extractParameterTypes(PsiMethod method) {
-        List<String> result = new ArrayList<>();
+    private ArrayList<String> extractParameterTypes(PsiMethod method) {
+        ArrayList<String> result = new ArrayList<>();
 
         PsiParameter[] parameters = method.getParameterList().getParameters();
 
