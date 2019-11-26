@@ -36,7 +36,7 @@ public class CaretPositionListenerTest {
 
     @Test
     public void caretPositionChangedTest() throws InterruptedException {
-        ClassMethod classMethod = new ClassMethod("edu.ucsd.TestClass","TestClass", "testMethod", new ArrayList<>(), null);
+        //ClassMethod classMethod = new ClassMethod("edu.ucsd.TestClass","TestClass", "testMethod", new ArrayList<>(), null);
 
         new Expectations() {{
             PsiTreeUtil.getParentOfType((PsiElement) any, PsiMethod.class);
@@ -55,7 +55,7 @@ public class CaretPositionListenerTest {
             result = "TestClass";
 
             // These two are recorded as expected:
-            AppState.setCurrentClassMethod(classMethod);
+            //AppState.setCurrentClassMethod(classMethod);
             times = 1;
         }};
 

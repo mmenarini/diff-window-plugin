@@ -12,6 +12,9 @@ import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 import edu.ucsd.getty.GettyRunner;
+import edu.ucsd.properties.Properties;
+import edu.ucsd.properties.PropertiesService;
+import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,19 +23,25 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 @Slf4j
 public class AutoRunInvariantsComponent implements ProjectComponent, PsiTreeChangeListener {
+    private PropertiesService propertiesService = PropertiesService.getInstance();
     private ExecutorService execService = Executors.newFixedThreadPool(1);
     private GettyRunner gettyRunner;
     private Project project;
     private PsiDocumentManager psiDocumentManager;
     private PsiManager psiManager;
+    private Disposable propertiesSubscription;
+    private Properties properties;
     public AutoRunInvariantsComponent(Project project){
+        propertiesSubscription = propertiesService.getPropertiesObservable()
+                .subscribe(p -> this.properties = p);
         this.project=project;
         this.psiDocumentManager = PsiDocumentManager.getInstance(project);
         this.psiManager = PsiManager.getInstance(project);
         String projectPath = project.getBasePath();
         gettyRunner = new GettyRunner(
                 project,
-                projectPath);
+                projectPath,
+                properties.isDebugLog(), properties.isStackTrace(), properties.isCleanBeforeRunning());
     }
 
     public void runGetty() {

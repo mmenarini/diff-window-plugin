@@ -8,6 +8,8 @@ import java.nio.file.Path;
 public class AppState {
     public static ClassMethod method;
     public static Path headRepoDir;
+//    public static boolean debugGradlePlugin = true;
+//    public static boolean stacktraceGradlePlugin = true;
     private static BehaviorSubject<ClassMethod> currentClassMethod = BehaviorSubject.create();
 
     public static Observable<ClassMethod> getCurrentClassMethodObservable() {

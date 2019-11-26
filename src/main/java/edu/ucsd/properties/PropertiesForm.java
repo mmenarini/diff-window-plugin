@@ -7,26 +7,39 @@ import javax.swing.*;
 
 public class PropertiesForm {
     private JPanel panel;
-    private JLabel gettyPathLabel;
     private JTextField gettyPathField;
-    private JLabel pythonPathLabel;
     private JTextField pythonPathField;
+    private JCheckBox debugLogCheckBox;
+    private JCheckBox stackTraceCheckBox;
+    private JCheckBox cleanBeforeRunningCheckBox;
 
     public PropertiesForm(@Nullable Project project) {
     }
 
     public void setProperties(Properties properties) {
-        this.gettyPathField.setText(properties.getGettyPath());
-        this.pythonPathField.setText(properties.getPythonPath());
-
+        //this.gettyPathField.setText(properties.getGettyPath());
+        //this.pythonPathField.setText(properties.getPythonPath());
+        this.debugLogCheckBox.setSelected(properties.isDebugLog());
+        this.stackTraceCheckBox.setSelected(properties.isStackTrace());
+        this.cleanBeforeRunningCheckBox.setSelected(properties.isStackTrace());
     }
 
     public String getGettyPath() {
-        return gettyPathField.getText();
+        return "";//gettyPathField.getText();
     }
 
     public String getPythonPath() {
-        return pythonPathField.getText();
+        return "";//pythonPathField.getText();
+    }
+
+    public boolean getDebugLog() { return debugLogCheckBox.isSelected(); }
+
+    public boolean getStackTrace() {
+        return stackTraceCheckBox.isSelected();
+    }
+
+    public boolean getCleanBeforeRunningCheckBox() {
+        return cleanBeforeRunningCheckBox.isSelected();
     }
 
     public JPanel getPanel() {

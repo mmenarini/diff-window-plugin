@@ -19,6 +19,9 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,11 +33,15 @@ public class GettyRunner {
     private String pythonPath;
     private String projectBasePath;
     private Project project;
-
-    public GettyRunner(Project project, String projectBasePath/*, String gettyPath, String pythonPath*/) {
+    private boolean enableDebug, enableStackTrace, cleanBeforeRunning;
+    public GettyRunner(Project project, String projectBasePath/*, String gettyPath, String pythonPath*/,
+                       boolean enableDebug, boolean enableStackTrace, boolean cleanBeforeRunning) {
         //log.warn("getty runner gettyPath {}, pythonPath {}", gettyPath, pythonPath);
         this.projectBasePath = projectBasePath;
         this.project = project;
+        this.enableDebug = enableDebug;
+        this.enableStackTrace = enableStackTrace;
+        this.cleanBeforeRunning = cleanBeforeRunning;
 //        this.gettyPath = gettyPath;
 //        this.pythonPath = pythonPath;
     }
@@ -113,16 +120,21 @@ public class GettyRunner {
 
     private void runGradleInvariants(String methodSignature, Path repoDir, String daikonJarPath) throws IOException {
         ProcessBuilder builder = new ProcessBuilder();
-        if (daikonJarPath==null) {
-            builder.command(
-                    "./gradlew", "invariants",
-                    "-PmethodSignature=" + methodSignature);
-        } else {
-            builder.command(
-                    "./gradlew", "invariants",
-                    "-PmethodSignature=" + methodSignature,
-                    "-PdaikonJarFile=" + daikonJarPath);
+        List<String> commandsList = new LinkedList<>();
+        commandsList.add("./gradlew");
+        if (cleanBeforeRunning)commandsList.add("clean");
+        commandsList.addAll(Arrays.asList("invariants",
+                "-PmethodSignature=" + methodSignature));
+        if (daikonJarPath!=null) {
+            commandsList.add("-PdaikonJarFile=" + daikonJarPath);
         }
+//        if (enableDebug && enableStackTrace)
+//            commandsList.add("--scan");
+//        else {
+        if (enableDebug) commandsList.add("--debug");
+        if (enableStackTrace) commandsList.add("--stacktrace");
+//        }
+        builder.command(commandsList);
 //        builder.command(
 //                "./gradlew","cleanTest", "cleanCallgraph", "cleanDaikon", "cleanInvariants","invariants",
 //                "-PmethodSignature="+methodSignature, "--info", "--stacktrace");

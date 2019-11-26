@@ -22,7 +22,11 @@ public class PropertiesDialog {
     public Optional<Properties> showAndGetProperties() {
         boolean isOk = builder.show() == DialogWrapper.OK_EXIT_CODE;
         if (isOk) {
-            return Optional.of(new Properties(propertiesForm.getGettyPath(), propertiesForm.getPythonPath()));
+            return Optional.of(new Properties(propertiesForm.getGettyPath(),
+                    propertiesForm.getPythonPath(),
+                    propertiesForm.getDebugLog(),
+                    propertiesForm.getStackTrace(),
+                    propertiesForm.getCleanBeforeRunningCheckBox()));
         }
         return Optional.empty();
     }

@@ -9,8 +9,9 @@ import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
 import lombok.extern.slf4j.Slf4j;
 
-import static edu.ucsd.properties.Properties.GETTY_PATH;
-import static edu.ucsd.properties.Properties.PYTHON_PATH;
+import java.util.Optional;
+
+import static edu.ucsd.properties.Properties.*;
 
 @Slf4j
 public class PropertiesService {
@@ -35,12 +36,17 @@ public class PropertiesService {
     }
 
     public void showSetPropertiesDialog() {
-        DataContext dataContext = DataManager.getInstance().getDataContextFromFocus().getResultSync();
-        Project project = dataContext.getData(PlatformDataKeys.PROJECT);
-        PropertiesForm propertiesForm = new PropertiesForm(project);
-        propertiesForm.setProperties(properties.getValue());
-        PropertiesDialog dialog = new PropertiesDialog(propertiesForm);
-        dialog.showAndGetProperties().ifPresent(this::setProperties);
+        DataManager.getInstance(). getDataContextFromFocusAsync().onSuccess(dataContext ->
+                {
+                    Project project = dataContext.getData(PlatformDataKeys.PROJECT);
+                    PropertiesForm propertiesForm = new PropertiesForm(project);
+                    propertiesForm.setProperties(properties.getValue());
+                    PropertiesDialog dialog = new PropertiesDialog(propertiesForm);
+                    Optional<Properties> props = dialog.showAndGetProperties();
+                    props.ifPresent(
+                            properties -> this.setProperties(properties));
+                }
+        );
     }
 
     public Observable<Properties> getPropertiesObservable() {
@@ -50,13 +56,19 @@ public class PropertiesService {
     private void initProperties() {
         properties.onNext(new Properties(
                 propertiesComponent.getValue(GETTY_PATH),
-                propertiesComponent.getValue(PYTHON_PATH)
+                propertiesComponent.getValue(PYTHON_PATH),
+                Boolean.getBoolean(propertiesComponent.getValue(DEBUG_LOG_PATH)),
+                Boolean.getBoolean(propertiesComponent.getValue(STACK_TRACE_PATH)),
+                Boolean.getBoolean(propertiesComponent.getValue(CLEAN_BEFORE_RUNNING_PATH))
         ));
     }
 
     public void setProperties(Properties properties) {
         propertiesComponent.setValue(GETTY_PATH, properties.getGettyPath());
         propertiesComponent.setValue(PYTHON_PATH, properties.getPythonPath());
+        propertiesComponent.setValue(DEBUG_LOG_PATH, properties.isDebugLog());
+        propertiesComponent.setValue(STACK_TRACE_PATH, properties.isStackTrace());
+        propertiesComponent.setValue(CLEAN_BEFORE_RUNNING_PATH, properties.isCleanBeforeRunning());
         this.properties.onNext(properties);
     }
 }

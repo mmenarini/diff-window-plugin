@@ -11,6 +11,8 @@ import edu.ucsd.factory.PanelFactory;
 import edu.ucsd.getty.GettyConstants;
 import edu.ucsd.getty.GettyInvariantsFilesRetriever;
 import edu.ucsd.getty.GettyRunner;
+import edu.ucsd.properties.Properties;
+import edu.ucsd.properties.PropertiesService;
 import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +27,7 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 public class DiffWindowContentManager {
+    private PropertiesService propertiesService = PropertiesService.getInstance();
     private ExecutorService execService = Executors.newFixedThreadPool(1);
     private GettyRunner gettyRunner;
     private ToolWindow toolWindow;
@@ -33,12 +36,17 @@ public class DiffWindowContentManager {
     private DiffWindow diffWindow;
     private Disposable classMethodObservable;
     private ClassMethod previousClassMethod;
+    private Disposable propertiesSubscription;
+    private Properties properties;
 
     public DiffWindowContentManager(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        propertiesSubscription = propertiesService.getPropertiesObservable()
+                .subscribe(p -> this.properties = p);
         String projectPath = project.getBasePath();
         gettyRunner = new GettyRunner(
                 project,
-                projectPath);
+                projectPath,
+                properties.isDebugLog(), properties.isStackTrace(), properties.isCleanBeforeRunning());
 
         this.toolWindow = toolWindow;
         GettyConstants gettyConstants = new GettyConstants(project);

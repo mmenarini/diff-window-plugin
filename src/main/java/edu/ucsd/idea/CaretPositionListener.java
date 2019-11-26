@@ -16,8 +16,11 @@ import com.intellij.psi.util.PsiUtil;
 import edu.ucsd.AppState;
 import edu.ucsd.ClassMethod;
 import edu.ucsd.getty.GettyRunner;
+import edu.ucsd.properties.Properties;
 import edu.ucsd.properties.PropertiesForm;
+import edu.ucsd.properties.PropertiesService;
 import edu.ucsd.reinfer.ReInferPriority;
+import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -28,10 +31,17 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 public class CaretPositionListener implements CaretListener {
-    private long modCount=-1;
+    private PropertiesService propertiesService = PropertiesService.getInstance();   private long modCount=-1;
     private ExecutorService execService = Executors.newFixedThreadPool(1);
     private GettyRunner gettyRunner;
     private PsiFile lastPsiFile=null;
+    private Disposable propertiesSubscription;
+    private Properties properties;
+
+    public CaretPositionListener(){
+        propertiesSubscription = propertiesService.getPropertiesObservable()
+                .subscribe(p -> this.properties = p);
+    }
     //private boolean hadError = true;
     @Override
     public void caretPositionChanged(CaretEvent e) {
@@ -59,7 +69,8 @@ public class CaretPositionListener implements CaretListener {
             String projectPath = project.getBasePath();
             gettyRunner = new GettyRunner(
                   project,
-                  projectPath);
+                  projectPath,
+                  properties.isDebugLog(), properties.isStackTrace(), properties.isCleanBeforeRunning());
           }
 
           Caret caret = e.getCaret();

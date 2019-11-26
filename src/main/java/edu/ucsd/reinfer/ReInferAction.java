@@ -149,7 +149,8 @@ public class ReInferAction extends AnAction {
             GettyConstants gettyConstants = new GettyConstants(project);
             gettyRunner = new GettyRunner(
                     project,
-                    projectPath);//(gettyConstants.SOURCE_DIR, properties.getGettyPath(), properties.getPythonPath());
+                    projectPath,
+                    properties.isDebugLog(), properties.isStackTrace(), properties.isCleanBeforeRunning());//(gettyConstants.SOURCE_DIR, properties.getGettyPath(), properties.getPythonPath());
             try {
 //                TODO: move priority file to gettyConstants?
                 //gettyRunner.run(hashOfParent, hashOfHead, priorityFile.getAbsolutePath());
