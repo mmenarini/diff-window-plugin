@@ -144,6 +144,10 @@ public class GettyRunner {
         builder.directory(repoDir.toFile());
         builder.redirectErrorStream(true);
 
+        String cmdLog = "\"" + String.join("\" \"", builder.command()) + "\"";
+
+        log.warn(cmdLog);
+
         Process p = builder.start();
         BufferedReader stdError = new BufferedReader(new
                 InputStreamReader(p.getInputStream()));
