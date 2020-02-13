@@ -6,6 +6,9 @@ import com.intellij.openapi.project.Project;
 import edu.ucsd.AppState;
 import edu.ucsd.ClassMethod;
 import edu.ucsd.mmenarini.getty.GettyMainKt;
+import edu.ucsd.properties.Properties;
+import edu.ucsd.properties.PropertiesService;
+import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.SystemUtils;
 import org.jetbrains.plugins.gradle.action.GradleExecuteTaskAction;
@@ -16,9 +19,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,25 +28,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Slf4j
-public class GettyRunner {
+public class GettyRunner implements com.intellij.openapi.Disposable {
     private ExecutorService execService = Executors.newFixedThreadPool(2);
-
+    private PropertiesService propertiesService = PropertiesService.getInstance();
+    private Disposable propertiesSubscription;
+    private Properties properties;
     private String gettyPath;
     private String pythonPath;
     private String projectBasePath;
     private Project project;
     private boolean enableDebug, enableStackTrace, cleanBeforeRunning;
-    public GettyRunner(Project project, String projectBasePath/*, String gettyPath, String pythonPath*/,
-                       boolean enableDebug, boolean enableStackTrace, boolean cleanBeforeRunning) {
-        //log.warn("getty runner gettyPath {}, pythonPath {}", gettyPath, pythonPath);
-        this.projectBasePath = projectBasePath;
+    public GettyRunner(Project project) {
+        this.projectBasePath = project.getBasePath();
         this.project = project;
-        this.enableDebug = enableDebug;
-        this.enableStackTrace = enableStackTrace;
-        this.cleanBeforeRunning = cleanBeforeRunning;
-//        this.gettyPath = gettyPath;
-//        this.pythonPath = pythonPath;
+        propertiesSubscription = propertiesService.getPropertiesObservable()
+                .subscribe(p -> this.properties = p);
+
     }
+
 
 /*    public void run(String commitHashPre, String commitHashPost, String priorityFilePath) throws IOException {
         if (!isCorrectPythonVersion()) {
@@ -90,6 +91,25 @@ public class GettyRunner {
     }
 
     public void run(ClassMethod /*String*/ method) throws IOException {
+        if (properties.isRemoveWorkBeforeRunning()){
+            Files.walkFileTree(AppState.headRepoDir,
+                new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult postVisitDirectory(
+                            Path dir, IOException exc) throws IOException {
+                        Files.delete(dir);
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(
+                            Path file, BasicFileAttributes attrs)
+                            throws IOException {
+                        Files.delete(file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+        }
 
         cloneRepository(projectBasePath);
         //TODO change to a config option
@@ -206,5 +226,10 @@ public class GettyRunner {
         while ((s = stdError.readLine()) != null) {
             log.error(s);
         }
+    }
+
+    @Override
+    public void dispose() {
+        propertiesSubscription.dispose();
     }
 }

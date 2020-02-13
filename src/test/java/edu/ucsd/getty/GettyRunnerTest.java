@@ -27,13 +27,13 @@ public Project proj;
 
     @Test
     public void runWithCorrectPythonVersion() throws IOException {
-        GettyRunner gettyRunner = new GettyRunner(proj, "src/test/resources/testScript", true, true);
+        GettyRunner gettyRunner = new GettyRunner(proj);
         //gettyRunner.run("pre", "post", "file");
     }
 
     @Test
     public void runWithExceptionInPythonCode() throws IOException, InterruptedException {
-        GettyRunner gettyRunner = new GettyRunner(proj, "src/test/resources/testScriptWithException", true, true);
+        GettyRunner gettyRunner = new GettyRunner(proj);
 
         try {
             //gettyRunner.run("pre", "post", "file");
@@ -48,7 +48,7 @@ public Project proj;
 
     @Test
     public void runWithInCorrectPythonVersion() throws IOException {
-        GettyRunner gettyRunner = new GettyRunner(proj, "src/test/resources/testScript", true, true);
+        GettyRunner gettyRunner = new GettyRunner(proj);
         try {
             //gettyRunner.run("pre", "post", "file");
             fail("No IllegalStateException thrown");

@@ -31,23 +31,15 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 public class CaretPositionListener implements CaretListener {
-    private PropertiesService propertiesService = PropertiesService.getInstance();   private long modCount=-1;
     private ExecutorService execService = Executors.newFixedThreadPool(1);
-    private GettyRunner gettyRunner;
     private PsiFile lastPsiFile=null;
-    private Disposable propertiesSubscription;
-    private Properties properties;
 
     public CaretPositionListener(){
-        propertiesSubscription = propertiesService.getPropertiesObservable()
-                .subscribe(p -> this.properties = p);
     }
-    //private boolean hadError = true;
     @Override
     public void caretPositionChanged(CaretEvent e) {
       try {
           log.debug("position changed from {} to {}", e.getOldPosition(), e.getNewPosition());
-//        Find current class and method and update the AppState
 
           Editor currEditor = e.getEditor();
           Project project = currEditor.getProject();
@@ -64,13 +56,10 @@ public class CaretPositionListener implements CaretListener {
 
           if(currPsiFile!=lastPsiFile) {
             lastPsiFile = currPsiFile ;
-            //hadError=true;
-            modCount = -1;
             String projectPath = project.getBasePath();
-            gettyRunner = new GettyRunner(
-                  project,
-                  projectPath,
-                  properties.isDebugLog(), properties.isStackTrace(), properties.isCleanBeforeRunning());
+//            gettyRunner = new GettyRunner(
+//                  project,
+//                  projectPath);
           }
 
           Caret caret = e.getCaret();

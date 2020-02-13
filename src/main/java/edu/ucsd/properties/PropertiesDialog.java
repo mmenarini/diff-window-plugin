@@ -22,11 +22,12 @@ public class PropertiesDialog {
     public Optional<Properties> showAndGetProperties() {
         boolean isOk = builder.show() == DialogWrapper.OK_EXIT_CODE;
         if (isOk) {
-            return Optional.of(new Properties(propertiesForm.getGettyPath(),
-                    propertiesForm.getPythonPath(),
+            return Optional.of(new Properties(
                     propertiesForm.getDebugLog(),
                     propertiesForm.getStackTrace(),
-                    propertiesForm.getCleanBeforeRunningCheckBox()));
+                    propertiesForm.getCleanBeforeRunningCheckBox(),
+                    propertiesForm.getRemoveWorkBeforeRunningCheckBox(),
+                    propertiesForm.getDoNotAutorunCheckBox()));
         }
         return Optional.empty();
     }

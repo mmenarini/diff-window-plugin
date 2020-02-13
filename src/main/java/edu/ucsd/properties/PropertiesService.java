@@ -55,20 +55,22 @@ public class PropertiesService {
 
     private void initProperties() {
         properties.onNext(new Properties(
-                propertiesComponent.getValue(GETTY_PATH),
-                propertiesComponent.getValue(PYTHON_PATH),
-                Boolean.getBoolean(propertiesComponent.getValue(DEBUG_LOG_PATH)),
-                Boolean.getBoolean(propertiesComponent.getValue(STACK_TRACE_PATH)),
-                Boolean.getBoolean(propertiesComponent.getValue(CLEAN_BEFORE_RUNNING_PATH))
+            Boolean.valueOf(propertiesComponent.getValue(DEBUG_LOG_PATH)),
+            Boolean.valueOf(propertiesComponent.getValue(STACK_TRACE_PATH)),
+            Boolean.valueOf(propertiesComponent.getValue(CLEAN_BEFORE_RUNNING_PATH)),
+            Boolean.valueOf(propertiesComponent.getValue(REMOVE_WORK_BEFORE_RUNNING_PATH)),
+            Boolean.valueOf(propertiesComponent.getValue(DO_NOT_AUTORUN_PATH))
         ));
     }
 
     public void setProperties(Properties properties) {
-        propertiesComponent.setValue(GETTY_PATH, properties.getGettyPath());
-        propertiesComponent.setValue(PYTHON_PATH, properties.getPythonPath());
+//        propertiesComponent.setValue(GETTY_PATH, properties.getGettyPath());
+//        propertiesComponent.setValue(PYTHON_PATH, properties.getPythonPath());
         propertiesComponent.setValue(DEBUG_LOG_PATH, properties.isDebugLog());
         propertiesComponent.setValue(STACK_TRACE_PATH, properties.isStackTrace());
         propertiesComponent.setValue(CLEAN_BEFORE_RUNNING_PATH, properties.isCleanBeforeRunning());
+        propertiesComponent.setValue(REMOVE_WORK_BEFORE_RUNNING_PATH, properties.isRemoveWorkBeforeRunning());
+        propertiesComponent.setValue(DO_NOT_AUTORUN_PATH, properties.isDoNotAutorun());
         this.properties.onNext(properties);
     }
 }

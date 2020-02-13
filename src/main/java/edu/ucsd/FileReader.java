@@ -12,7 +12,10 @@ import java.util.Optional;
 public class FileReader {
     public static Optional<String> readFileAsString(File file) {
         if (file == null) {
-            log.warn("File was null");
+            log.warn("File param was null");
+            return Optional.empty();
+        } else if (!file.exists()) {
+            log.warn("File "+file.getAbsolutePath()+" does not exist");
             return Optional.empty();
         }
         //Read it as a string
@@ -24,7 +27,8 @@ public class FileReader {
                 stringBuilder.append('\n');
             }
         } catch (IOException e1) {
-            log.error(ExceptionUtils.getStackTrace(e1));
+            log.error("Error: " + ExceptionUtils.getMessage(e1) +
+                    ", Root cause: " + ExceptionUtils.getRootCauseMessage(e1));
         }
 
         return Optional.of(stringBuilder.toString());
