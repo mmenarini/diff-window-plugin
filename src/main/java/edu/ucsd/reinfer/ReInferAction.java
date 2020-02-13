@@ -45,7 +45,7 @@ public class ReInferAction extends AnAction {
 
     private Disposable propertiesSubscription;
     private Properties properties;
-    private GettyRunner gettyRunner;
+    //private GettyRunner gettyRunner;
     private RsyncAdapter rsyncAdapter;
     private GitAdapter gitAdapter;
 
@@ -61,7 +61,7 @@ public class ReInferAction extends AnAction {
     }
 
     private void reInfer(Project project, ClassMethod method) {
-        AppState.runGetty(gettyRunner, method, true);
+        AppState.runGetty(new GettyRunner(project), method, true);
 
     }
 }

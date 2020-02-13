@@ -37,7 +37,7 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
     private String pythonPath;
     private String projectBasePath;
     private Project project;
-    private boolean enableDebug, enableStackTrace, cleanBeforeRunning;
+    //private boolean enableDebug, enableStackTrace, cleanBeforeRunning;
     public GettyRunner(Project project) {
         this.projectBasePath = project.getBasePath();
         this.project = project;
@@ -142,7 +142,7 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
         ProcessBuilder builder = new ProcessBuilder();
         List<String> commandsList = new LinkedList<>();
         commandsList.add("./gradlew");
-        if (cleanBeforeRunning)commandsList.add("clean");
+        if (properties.isCleanBeforeRunning())commandsList.add("clean");
         commandsList.addAll(Arrays.asList("invariants",
                 "-PmethodSignature=" + methodSignature));
         if (daikonJarPath!=null) {
@@ -151,8 +151,8 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
 //        if (enableDebug && enableStackTrace)
 //            commandsList.add("--scan");
 //        else {
-        if (enableDebug) commandsList.add("--debug");
-        if (enableStackTrace) commandsList.add("--stacktrace");
+        if (properties.isDebugLog()) commandsList.add("--debug");
+        if (properties.isStackTrace()) commandsList.add("--stacktrace");
 //        }
         builder.command(commandsList);
 //        builder.command(
