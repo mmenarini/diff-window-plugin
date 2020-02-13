@@ -142,7 +142,10 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
         ProcessBuilder builder = new ProcessBuilder();
         List<String> commandsList = new LinkedList<>();
         commandsList.add("./gradlew");
-        if (properties.isCleanBeforeRunning())commandsList.add("clean");
+        if (properties.isCleanBeforeRunning())
+            commandsList.add("clean");
+        else
+            commandsList.add("cleanDaikon");
         commandsList.addAll(Arrays.asList("invariants",
                 "-PmethodSignature=" + methodSignature));
         if (daikonJarPath!=null) {

@@ -132,7 +132,7 @@ public class AutoRunInvariantsComponent implements ProjectComponent, PsiTreeChan
                             }
                         }, ModalityState.NON_MODAL);
                 }
-            },3L, TimeUnit.SECONDS);
+            },5L, TimeUnit.SECONDS);
         }
     }
 
