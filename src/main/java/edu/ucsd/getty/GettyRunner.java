@@ -138,10 +138,20 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
         );
     }
 
+    private List<String> getSystemGradlew() {
+        List<String> commandsList = new LinkedList<>();
+        if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
+            commandsList.add("cmd.exe");
+            commandsList.add("/C");
+            commandsList.add("gradlew.bat");
+        } else
+            commandsList.add("./gradlew");
+        return commandsList;
+    }
+
     private void runGradleInvariants(String methodSignature, Path repoDir, String daikonJarPath) throws IOException {
         ProcessBuilder builder = new ProcessBuilder();
-        List<String> commandsList = new LinkedList<>();
-        commandsList.add("./gradlew");
+        List<String> commandsList = getSystemGradlew();
         if (properties.isCleanBeforeRunning())
             commandsList.add("clean");
         else
@@ -181,8 +191,7 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
         waitForProcessToComplete(p);
 
         if (p.exitValue() != 0) {
-            String cmd = String.format("./gradlew cleanDaikon invariants --stacktrace");
-            logProcessErrorOutput(p, cmd, stdError);
+            logProcessErrorOutput(p, cmdLog, stdError);
             throw new IllegalStateException("The csi script exited with value " + p.exitValue());
         }
     }
