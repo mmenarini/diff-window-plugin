@@ -91,13 +91,15 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
     }
 
     public void run(ClassMethod /*String*/ method) throws IOException {
-        if (properties.isRemoveWorkBeforeRunning()){
+        if (properties.isRemoveWorkBeforeRunning() && Files.exists(AppState.headRepoDir)){
             Files.walkFileTree(AppState.headRepoDir,
                 new SimpleFileVisitor<Path>() {
                     @Override
                     public FileVisitResult postVisitDirectory(
                             Path dir, IOException exc) throws IOException {
-                        Files.delete(dir);
+                        try {
+                            Files.delete(dir);
+                        } catch(Throwable t) {}
                         return FileVisitResult.CONTINUE;
                     }
 
@@ -105,7 +107,9 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
                     public FileVisitResult visitFile(
                             Path file, BasicFileAttributes attrs)
                             throws IOException {
-                        Files.delete(file);
+                        try {
+                            Files.delete(file);
+                        } catch(Throwable t) {}
                         return FileVisitResult.CONTINUE;
                     }
                 });
@@ -154,9 +158,11 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
         List<String> commandsList = getSystemGradlew();
         if (properties.isCleanBeforeRunning())
             commandsList.add("clean");
-        else
+        else {
             commandsList.add("cleanDaikon");
-        commandsList.addAll(Arrays.asList("invariants",
+            commandsList.add("cleanInvariants");
+        }
+         commandsList.addAll(Arrays.asList("invariants",
                 "-PmethodSignature=" + methodSignature));
         if (daikonJarPath!=null) {
             commandsList.add("-PdaikonJarFile=" + daikonJarPath);

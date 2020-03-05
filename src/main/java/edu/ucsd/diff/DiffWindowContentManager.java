@@ -43,6 +43,7 @@ public class DiffWindowContentManager {
     private Disposable propertiesSubscription;
     private Properties properties;
     private GettyRunner gettyRunner;
+
     //Notice that project can change (either open a new project in the same window or a multiproject config
     //We can manage to get the correct project form the ClassMethod passed to the classmethod changed event
     //So we should save the project we get and make sure that we call the event on the right tool window for the project
@@ -114,6 +115,7 @@ public class DiffWindowContentManager {
         }
     }
 
+    private  ClassMethod lastAutomaticMethod;
     private List<DiffTab> initTabsList(List<File> files, ClassMethod newClassMethod) {
         List<DiffTab> tabsList = new ArrayList<>();
 
@@ -126,8 +128,9 @@ public class DiffWindowContentManager {
                 execService.submit(() -> {
                     if (properties.isDoNotAutorun()) {
                         log.warn("Autoinference disabled run reinfer manually");
-                    } else {
+                    } else if(lastAutomaticMethod!=newClassMethod) {
                         log.warn("Autoinference enabled scheduling now");
+                        lastAutomaticMethod=newClassMethod;
                         AppState.runGetty(gettyRunner, newClassMethod);
                     }
                 });
