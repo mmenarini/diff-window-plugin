@@ -18,10 +18,14 @@ public class AppState {
 //    public static boolean debugGradlePlugin = true;
 //    public static boolean stacktraceGradlePlugin = true;
     private static BehaviorSubject<ClassMethod> currentClassMethod = BehaviorSubject.create();
-
     public static Observable<ClassMethod> getCurrentClassMethodObservable() {
         return currentClassMethod;
     }
+    public static Path getHeadRepoInvariantsCache() {
+        return headRepoDir.resolve("_invariants_cache");
+    }
+
+
     public static void triggerObservables() {
         if (method!=null)
             currentClassMethod.onNext(method);

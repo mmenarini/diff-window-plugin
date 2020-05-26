@@ -9,6 +9,9 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -142,7 +145,16 @@ public class GettyInvariantsFilesRetriever {
         return fileName.contains(String.format("_%s_", hashCode));
     }
 
-    public static Path getHeadRepoInvarinatFilePath(ClassMethod newClassMethod) {
+    public static Path getHeadRepoCachedInvariantFilePath(ClassMethod newClassMethod) {
+        String[] lst = newClassMethod.getMethodSignature().split(" ");
+        if (lst.length!=3) return null;
+        String filename = getInvFilenameFromSignaturePart(lst[2]);
+        Path invHead = AppState.getHeadRepoInvariantsCache();
+        return invHead
+                .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
+                .resolve(filename);
+    }
+    public static Path getHeadRepoInvariantFilePath(ClassMethod newClassMethod) {
         String[] lst = newClassMethod.getMethodSignature().split(" ");
         if (lst.length!=3) return null;
         String filename = getInvFilenameFromSignaturePart(lst[2]);
@@ -151,25 +163,46 @@ public class GettyInvariantsFilesRetriever {
                 .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
                 .resolve(filename);
     }
-    public Optional<List<File>> getFiles(ClassMethod newClassMethod) {
-        if (AppState.headRepoDir==null)
-            return Optional.empty();
+    public Path getProjectRepoInvariantFilePath(ClassMethod newClassMethod) {
         String[] lst = newClassMethod.getMethodSignature().split(" ");
-        if (lst.length==3) {
-            String filename = getInvFilenameFromSignaturePart(lst[2]);
-            Path invBase = Paths.get(project.getBasePath()).resolve("build").resolve("invariants");
-            Path invHead = AppState.headRepoDir.resolve("build").resolve("invariants");
-            Path filePre = invHead
-                    .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
-                    .resolve(filename);
-            Path filePost = invBase
-                    .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
-                    .resolve(filename);
+        if (lst.length!=3) return null;
+        String filename = getInvFilenameFromSignaturePart(lst[2]);
+        Path invBase = Paths.get(project.getBasePath()).resolve("build").resolve("invariants");
+        return invBase
+                .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
+                .resolve(filename);
+    }
+    private Path checkForMissingFiles(Path file) {
+        if (Files.exists(file))
+            return file;
+        Path missing = file.getParent().resolve(file.getFileName().toString()+".missing");
+        if(!missing.getParent().toFile().exists())
+            missing.getParent().toFile().mkdirs();
+        try (PrintWriter out = new PrintWriter(missing.toFile())) {
+            out.println("Missing File "+file.toString());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return missing;
+    }
+
+    public boolean existFile(ClassMethod newClassMethod) {
+        Path filePost = getProjectRepoInvariantFilePath(newClassMethod);
+        return Files.exists(filePost);
+    }
+
+    public Optional<List<File>> getFiles(ClassMethod newClassMethod) {
+//        if (AppState.headRepoDir==null)
+//            return Optional.empty();
+//        String[] lst = newClassMethod.getMethodSignature().split(" ");
+//        if (lst.length==3) {
+            Path filePre = checkForMissingFiles(getHeadRepoCachedInvariantFilePath(newClassMethod));
+            Path filePost = checkForMissingFiles(getProjectRepoInvariantFilePath(newClassMethod));
 
             List<File> result = Arrays.asList(filePre.toFile(), filePost.toFile());
             return Optional.of(result);
-        }
-        return Optional.empty();
+//        }
+//        return Optional.empty();
     }
 
     @NotNull

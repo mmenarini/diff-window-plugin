@@ -75,14 +75,18 @@ public class DiffWindowContentManager {
     private void handleClassMethodChangedOnDispatch(ClassMethod newClassMethod) {
         log.warn("class method observed: class {} method {} parameterTypes {}",
                 newClassMethod.getClassName(), newClassMethod.getMethodName(), newClassMethod.getParameterTypes());
+
+        if (!gettyInvariantsFilesRetriever.existFile(newClassMethod)) {
+            AppState.runGetty(gettyRunner, newClassMethod, false);
+            return;
+        }
+
         final List<DiffTab> tabsList = new ArrayList<>();
         Optional<List<File>> filesOptional = gettyInvariantsFilesRetriever.getFiles(newClassMethod);
-
         if (filesOptional.isPresent()) {
             tabsList.addAll(initTabsList(filesOptional.get(), newClassMethod));
         } else {
             log.warn("filesOptional was empty");
-
         }
         if (tabsList.size() == 0) {
             tabsList.add(new DiffTab("", "", "", panelFactory));

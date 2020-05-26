@@ -1,7 +1,5 @@
 package edu.ucsd.getty;
 
-import com.intellij.execution.RunManagerEx;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import edu.ucsd.AppState;
 import edu.ucsd.ClassMethod;
@@ -10,10 +8,7 @@ import edu.ucsd.properties.Properties;
 import edu.ucsd.properties.PropertiesService;
 import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.SystemUtils;
 import org.jetbrains.plugins.gradle.action.GradleExecuteTaskAction;
-import org.jetbrains.plugins.gradle.tooling.ModelBuilderService;
-import org.jetbrains.plugins.gradle.util.GradleUtil;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -124,10 +119,33 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
         String daikonJarPath = null;
         if (daikonJar!=null && Files.exists(daikonJar))
             daikonJarPath = daikonJar.toAbsolutePath().toString();
-        if (Files.notExists(GettyInvariantsFilesRetriever.getHeadRepoInvarinatFilePath(method)))
-            runGradleInvariants(method.getMethodSignature(), AppState.headRepoDir, daikonJarPath);
-        runGradleInvariants(method.getMethodSignature(), Paths.get(projectBasePath), daikonJarPath);
-        AppState.triggerObservables();
+        Path invCacheFile=GettyInvariantsFilesRetriever.getHeadRepoCachedInvariantFilePath(method);
+        if (Files.notExists(invCacheFile)) {
+            try {
+                runGradleInvariants(method.getMethodSignature(), AppState.headRepoDir, daikonJarPath);
+                Path invFile = GettyInvariantsFilesRetriever.getHeadRepoInvariantFilePath(method);
+                if (Files.notExists(invFile))
+                    log.error("Invariant file {} for method {} does not exist.", invFile.toString(), method.toString());
+                else {
+                    //Cache the file
+                    try {
+                        invCacheFile.getParent().toFile().mkdirs();
+                        Files.copy(invFile, invCacheFile);
+                    } catch(NoSuchFileException e) {
+                        log.error("Could not cache the invariant file.");
+                        log.error(e.getLocalizedMessage());
+                    }
+                }
+            } catch(IllegalStateException e) {
+                log.error("Did not complete GETTY successfully on the HEAD repo.");
+            }
+        }
+        try {
+            runGradleInvariants(method.getMethodSignature(), Paths.get(projectBasePath), daikonJarPath);
+            AppState.triggerObservables();
+        } catch(IllegalStateException e) {
+            log.error("Did not complete GETTY successfully on the current code.");
+        }
         //runGradleInvariantsOnProject(method);
 
     }
@@ -183,7 +201,7 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
         builder.directory(repoDir.toFile());
         builder.redirectErrorStream(true);
 
-        String cmdLog = "\"" + String.join("\" \"", builder.command()) + "\"";
+        String cmdLog = "["+repoDir+"]"+"\"" + String.join("\" \"", builder.command()) + "\"";
 
         log.warn(cmdLog);
 
@@ -198,6 +216,7 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
 
         if (p.exitValue() != 0) {
             logProcessErrorOutput(p, cmdLog, stdError);
+            log.error("The csi script exited with value " + p.exitValue());
             throw new IllegalStateException("The csi script exited with value " + p.exitValue());
         }
     }
