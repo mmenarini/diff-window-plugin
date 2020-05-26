@@ -178,7 +178,7 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
             commandsList.add("clean");
         else {
             commandsList.add("cleanDaikon");
-            commandsList.add("cleanInvariants");
+            //commandsList.add("cleanInvariants");
         }
          commandsList.addAll(Arrays.asList("invariants",
                 "-PmethodSignature=" + methodSignature));
