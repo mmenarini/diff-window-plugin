@@ -145,20 +145,24 @@ public class GettyInvariantsFilesRetriever {
         return fileName.contains(String.format("_%s_", hashCode));
     }
 
-    public static Path getHeadRepoCachedInvariantFilePath(ClassMethod newClassMethod) {
+    public static Path getHeadRepoInvariantsCache(Path headRepoDir) {
+        return headRepoDir.resolve("_invariants_cache");
+    }
+
+    public static Path getHeadRepoCachedInvariantFilePath(ClassMethod newClassMethod, Path headRepoDir) {
         String[] lst = newClassMethod.getMethodSignature().split(" ");
         if (lst.length!=3) return null;
         String filename = getInvFilenameFromSignaturePart(lst[2]);
-        Path invHead = AppState.getHeadRepoInvariantsCache();
+        Path invHead = getHeadRepoInvariantsCache(headRepoDir);
         return invHead
                 .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
                 .resolve(filename);
     }
-    public static Path getHeadRepoInvariantFilePath(ClassMethod newClassMethod) {
+    public static Path getHeadRepoInvariantFilePath(ClassMethod newClassMethod, Path headRepoDir) {
         String[] lst = newClassMethod.getMethodSignature().split(" ");
         if (lst.length!=3) return null;
         String filename = getInvFilenameFromSignaturePart(lst[2]);
-        Path invHead = AppState.headRepoDir.resolve("build").resolve("invariants");
+        Path invHead = headRepoDir.resolve("build").resolve("invariants");
         return invHead
                 .resolve(newClassMethod.qualifiedClassName.replace(".","/"))
                 .resolve(filename);
@@ -191,18 +195,11 @@ public class GettyInvariantsFilesRetriever {
         return Files.exists(filePost);
     }
 
-    public Optional<List<File>> getFiles(ClassMethod newClassMethod) {
-//        if (AppState.headRepoDir==null)
-//            return Optional.empty();
-//        String[] lst = newClassMethod.getMethodSignature().split(" ");
-//        if (lst.length==3) {
-            Path filePre = checkForMissingFiles(getHeadRepoCachedInvariantFilePath(newClassMethod));
-            Path filePost = checkForMissingFiles(getProjectRepoInvariantFilePath(newClassMethod));
-
-            List<File> result = Arrays.asList(filePre.toFile(), filePost.toFile());
-            return Optional.of(result);
-//        }
-//        return Optional.empty();
+    public File getFileHead(ClassMethod newClassMethod, Path headRepoDir) {
+        return getHeadRepoCachedInvariantFilePath(newClassMethod,headRepoDir).toFile();
+    }
+    public File getFileCurrent(ClassMethod newClassMethod) {
+        return getProjectRepoInvariantFilePath(newClassMethod).toFile();
     }
 
     @NotNull

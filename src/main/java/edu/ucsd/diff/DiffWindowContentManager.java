@@ -1,27 +1,26 @@
 package edu.ucsd.diff;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.wm.ToolWindow;
-import edu.ucsd.AppState;
-import edu.ucsd.ClassMethod;
-import edu.ucsd.FileReader;
+import com.intellij.util.messages.MessageBus;
+import com.intellij.util.ui.UIUtil;
+import edu.ucsd.*;
 import edu.ucsd.factory.PanelFactory;
 import edu.ucsd.getty.GettyConstants;
 import edu.ucsd.getty.GettyInvariantsFilesRetriever;
-import edu.ucsd.getty.GettyRunner;
+import edu.ucsd.mmenarini.getty.GettyMainKt;
 import edu.ucsd.properties.Properties;
 import edu.ucsd.properties.PropertiesService;
 import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
-import org.gradle.api.internal.project.ProjectFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +29,8 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 public class DiffWindowContentManager {
+    private final GettyRunNotifier gettyRunPublisher;
+    private Path repoHeadDir=null;
     private PropertiesService propertiesService = PropertiesService.getInstance();
     private ExecutorService execService = Executors.newFixedThreadPool(1);
     //private GettyRunner gettyRunner;
@@ -38,11 +39,15 @@ public class DiffWindowContentManager {
     private GettyInvariantsFilesRetriever gettyInvariantsFilesRetriever;
     private PanelFactory panelFactory;
     private DiffWindow diffWindow;
-    private Disposable classMethodObservable;
-    private ClassMethod previousClassMethod;
+    //private Disposable classMethodObservable;
+    private ClassMethod shownClassMethod;
+    private String HeadPanel ="";
+    private String CurrentPanel ="";
     private Disposable propertiesSubscription;
     private Properties properties;
-    private GettyRunner gettyRunner;
+
+    //private GettyRunner gettyRunner;
+    private AutoRunInvariantsComponent autoRunInvariantsComponent;
 
     //Notice that project can change (either open a new project in the same window or a multiproject config
     //We can manage to get the correct project form the ClassMethod passed to the classmethod changed event
@@ -50,57 +55,162 @@ public class DiffWindowContentManager {
     public DiffWindowContentManager(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         propertiesSubscription = propertiesService.getPropertiesObservable()
                 .subscribe(p -> this.properties = p);
-        gettyRunner = new GettyRunner(project);
+        //gettyRunner = new GettyRunner(project);
         this.toolWindow = toolWindow;
+
         this.currentProject = project;
         GettyConstants gettyConstants = new GettyConstants(project);
         this.gettyInvariantsFilesRetriever = new GettyInvariantsFilesRetriever(new File(gettyConstants.OUTPUT_DIR), project);
         this.panelFactory = new PanelFactory(project);
-        this.classMethodObservable = initClassMethodSubscription();
+
+        MessageBus messageBus = project.getMessageBus();
+        gettyRunPublisher = messageBus.syncPublisher(GettyRunNotifier.GETTY_RUN_NOTIFIER_TOPIC);
+        messageBus.connect().subscribe(MethodChangeNotifier.METHOD_CHANGE_NOTIFIER_TOPIC, new MethodChangeNotifier() {
+            @Override
+            public void newMethod(ClassMethod method) {
+                handleClassMethodChanged(method);
+            }
+        });
+        messageBus.connect().subscribe(GettyRunNotifier.GETTY_RUN_NOTIFIER_TOPIC, new GettyRunNotifier() {
+            @Override
+            public void run() {
+
+            }
+
+            @Override
+            public void run(ClassMethod method, boolean stopIfRunning) {
+
+            }
+
+            @Override
+            public void stop() {
+
+            }
+
+            @Override
+            public void started(ClassMethod method) {
+
+            }
+
+            @Override
+            public void cloning(String repo) {
+
+            }
+
+            @Override
+            public void cloned(Path repoHead) {
+                repoHeadDir=repoHead;
+            }
+
+            @Override
+            public void error(String message) {
+                messageDiffWindow(shownClassMethod, message,null);
+            }
+
+            @Override
+            public void headInferenceStared(ClassMethod method) {
+                HeadPanel="Inferring Invariants";
+                updateUI();
+            }
+
+            @Override
+            public void currentInferenceStarted(ClassMethod method) {
+                CurrentPanel="Inferring Invariants";
+                updateUI();
+            }
+
+            @Override
+            public void headInferenceError(ClassMethod method, String message) {
+                HeadPanel=message;
+                updateUI();
+            }
+
+            @Override
+            public void currentInferenceError(ClassMethod method, String message) {
+                CurrentPanel=message;
+                updateUI();
+            }
+
+            @Override
+            public void headInferenceDone(ClassMethod method) {
+                handleClassMethodChangedHead(method);
+            }
+
+            @Override
+            public void currentInferenceDone(ClassMethod method) {
+                handleClassMethodChangedCurrent(method);
+            }
+
+            @Override
+            public void done(ClassMethod method) {
+
+            }
+
+            @Override
+            public void stopped(ClassMethod method) {
+                if(HeadPanel=="Inferring Invariants")
+                    HeadPanel="Sopped while  inferring";
+                if(CurrentPanel=="Inferring Invariants")
+                    CurrentPanel="Sopped while  inferring";
+            }
+        });
+
+        //this.classMethodObservable = initClassMethodSubscription();
         ProjectManager.getInstance().addProjectManagerListener(project, new ProjectManagerListener() {
             @Override
             public void projectClosing(@NotNull Project project) {
-                classMethodObservable.dispose();
+                //classMethodObservable.dispose();
                 propertiesSubscription.dispose();
-                gettyRunner.dispose();
             }
         });
+        Path gitPath = Paths.get(project.getBasePath());
+        repoHeadDir = GettyMainKt.cloneGitHead(gitPath);
     }
 
-    private Disposable initClassMethodSubscription() {
-        return AppState.getCurrentClassMethodObservable()
-                .subscribe(this::handleClassMethodChanged);
-    }
-
-    private void handleClassMethodChangedOnDispatch(ClassMethod newClassMethod) {
-        log.warn("class method observed: class {} method {} parameterTypes {}",
-                newClassMethod.getClassName(), newClassMethod.getMethodName(), newClassMethod.getParameterTypes());
-
-        if (!gettyInvariantsFilesRetriever.existFile(newClassMethod)) {
-            AppState.runGetty(gettyRunner, newClassMethod, false);
-            return;
-        }
-
-        final List<DiffTab> tabsList = new ArrayList<>();
-        Optional<List<File>> filesOptional = gettyInvariantsFilesRetriever.getFiles(newClassMethod);
-        if (filesOptional.isPresent()) {
-            tabsList.addAll(initTabsList(filesOptional.get(), newClassMethod));
-        } else {
-            log.warn("filesOptional was empty");
-        }
-        if (tabsList.size() == 0) {
-            tabsList.add(new DiffTab("", "", "", panelFactory));
-        }
-        this.previousClassMethod = newClassMethod;
-        ApplicationManager.getApplication().invokeLater(() -> {
-            if (this.diffWindow != null) this.diffWindow.removeSelfFromToolWindow();
+    private void messageDiffWindow(ClassMethod method, String message, String message2){
+        UIUtil.invokeLaterIfNeeded(() -> {
+            List<DiffTab> tabsList = new ArrayList<>();
+            tabsList.add(new DiffTab(String.format("%s - %s", method.getClassName(),
+                    method.getMethodName()), message, message2, panelFactory));
+            if (this.diffWindow != null)
+                this.diffWindow.removeSelfFromToolWindow();
             this.diffWindow = new DiffWindow(toolWindow, tabsList);
         });
     }
 
-        private void handleClassMethodChanged(ClassMethod newClassMethod) {
+    private void handleClassMethodChangedHead(ClassMethod newClassMethod) {
+        if(repoHeadDir==null)
+            return;
+        File file = gettyInvariantsFilesRetriever.getFileHead(newClassMethod, repoHeadDir);
+        Optional<String> str = FileReader.readFileAsString(file);
+        if(str.isPresent()) {
+            HeadPanel= str.get();
+        } else {
+            HeadPanel = "Computing...";
+            gettyRunPublisher.run(newClassMethod, false);
+        }
+        updateUI();
+    }
+
+    private void handleClassMethodChangedCurrent(ClassMethod newClassMethod) {
+        File file = gettyInvariantsFilesRetriever.getFileCurrent(newClassMethod);
+        Optional<String> str = FileReader.readFileAsString(file);
+        if(str.isPresent()) {
+            CurrentPanel= str.get();
+        } else {
+            CurrentPanel = "Computing...";
+            gettyRunPublisher.run(newClassMethod, false);
+        }
+        updateUI();
+    }
+
+    private void updateUI() {
+        messageDiffWindow(shownClassMethod, HeadPanel, CurrentPanel);
+    }
+
+    private void handleClassMethodChanged(ClassMethod newClassMethod) {
         try {
-            if (currentProject!=newClassMethod.getDeclaringFile().getProject()) {
+            if (currentProject != newClassMethod.getDeclaringFile().getProject()) {
                 log.warn("Class method received but on different project");
                 return;
             }
@@ -108,47 +218,13 @@ public class DiffWindowContentManager {
                 log.warn("Class method received but corresponding project is disposed");
                 return;
             }
-            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    handleClassMethodChangedOnDispatch(newClassMethod);
-                }
-            });
-        } catch(Throwable ex) {
+            log.info("class method observed: class {} method {} parameterTypes {}",
+                    newClassMethod.getClassName(), newClassMethod.getMethodName(), newClassMethod.getParameterTypes());
+            shownClassMethod = newClassMethod;
+            handleClassMethodChangedHead(newClassMethod);
+            handleClassMethodChangedCurrent(newClassMethod);
+        } catch (Throwable ex) {
             log.error("Exception while processing handleClassMethodChanged", ex);
         }
-    }
-
-    private  ClassMethod lastAutomaticMethod;
-    private List<DiffTab> initTabsList(List<File> files, ClassMethod newClassMethod) {
-        List<DiffTab> tabsList = new ArrayList<>();
-
-        if (files.size() != 2) {
-            files.forEach(f -> log.warn("File: {}", f.getName()));
-            log.error("Total number of files was {} instead of 2", files.size());
-        } else {
-//            TODO: base pre/post on hash instead of index
-            if (!(files.get(0).exists() && files.get(1).exists())) {
-                execService.submit(() -> {
-                    if (properties.isDoNotAutorun()) {
-                        log.warn("Autoinference disabled run reinfer manually");
-                    } else if(lastAutomaticMethod!=newClassMethod) {
-                        log.warn("Autoinference enabled scheduling now");
-                        lastAutomaticMethod=newClassMethod;
-                        AppState.runGetty(gettyRunner, newClassMethod);
-                    }
-                });
-            }
-            Optional<String> pre = FileReader.readFileAsString(files.get(0));
-            Optional<String> post = FileReader.readFileAsString(files.get(1));
-
-            if (pre.isPresent() && post.isPresent()) {
-                tabsList.add(new DiffTab(String.format("%s - %s", newClassMethod.getClassName(),
-                        newClassMethod.getMethodName()), pre.get(), post.get(), panelFactory));
-            } else {
-                log.warn("Pre or post was empty");
-            }
-        }
-        return tabsList;
     }
 }

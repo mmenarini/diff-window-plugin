@@ -10,8 +10,11 @@ public class DiffActionsPanel {
 
     private static DefaultActionGroup getActionGroup() {
         final AnAction action = ActionManager.getInstance().getAction("DiffWindow.ReInfer");
+        final AnAction actionKill = ActionManager.getInstance().getAction("DiffWindow.KillInfer");
+
         DefaultActionGroup actionGroup = new DefaultActionGroup();
         actionGroup.add(action);
+        actionGroup.add(actionKill);
         return actionGroup;
     }
 

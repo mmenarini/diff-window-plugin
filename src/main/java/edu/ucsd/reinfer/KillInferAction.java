@@ -7,16 +7,16 @@ import edu.ucsd.GettyRunNotifier;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ReInferAction extends AnAction {
+public class KillInferAction extends AnAction {
 
-    public ReInferAction() {
-        super("reinfer");
+    public KillInferAction() {
+        super("killInfer");
     }
 
     public void actionPerformed(AnActionEvent event) {
         Project project = event.getProject();
         if (project != null) {
-            project.getMessageBus().syncPublisher(GettyRunNotifier.GETTY_RUN_NOTIFIER_TOPIC).run();
+            project.getMessageBus().syncPublisher(GettyRunNotifier.GETTY_RUN_NOTIFIER_TOPIC).stop();
         }
     }
 }

@@ -1,64 +1,144 @@
 package edu.ucsd;
 
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
+import com.intellij.util.messages.MessageBus;
 import edu.ucsd.getty.GettyRunner;
-import io.reactivex.Observable;
-import io.reactivex.subjects.BehaviorSubject;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
 @Slf4j
-public class AppState {
-    private static ExecutorService execService = Executors.newFixedThreadPool(1);
-    private static boolean isGettyRunning = false;
-    public static ClassMethod method;
-    public static Path headRepoDir;
-//    public static boolean debugGradlePlugin = true;
-//    public static boolean stacktraceGradlePlugin = true;
-    private static BehaviorSubject<ClassMethod> currentClassMethod = BehaviorSubject.create();
-    public static Observable<ClassMethod> getCurrentClassMethodObservable() {
-        return currentClassMethod;
-    }
-    public static Path getHeadRepoInvariantsCache() {
-        return headRepoDir.resolve("_invariants_cache");
-    }
+public class AppState implements Disposable {
+    private final MethodChangeNotifier methodChangePublisher;
+    private boolean isGettyRunning = false;
+    public ClassMethod method;
+    private final GettyRunner gettyRunner;
 
 
-    public static void triggerObservables() {
-        if (method!=null)
-            currentClassMethod.onNext(method);
-    }
-    public static void setCurrentClassMethod(ClassMethod classMethod) {
-        method = classMethod;
-        currentClassMethod.onNext(classMethod);
-    }
+    public AppState(Project project){
+        MessageBus messageBus = project.getMessageBus();
+        methodChangePublisher = messageBus.syncPublisher(MethodChangeNotifier.METHOD_CHANGE_NOTIFIER_TOPIC);
+        GettyRunNotifier gettyRunPublisher = messageBus.syncPublisher(GettyRunNotifier.GETTY_RUN_NOTIFIER_TOPIC);
+        gettyRunner = new GettyRunner(project);
+        Disposer.register(this, gettyRunner);
+        messageBus.connect().subscribe(GettyRunNotifier.GETTY_RUN_NOTIFIER_TOPIC, new GettyRunNotifier() {
+            @Override
+            public void run() {
+                if (method!=null)
+                    runGetty(method,false);
+            }
 
-    public static boolean runGetty(GettyRunner gettyRunner, ClassMethod method) {
-        return runGetty(gettyRunner, method, false);
-    }
+            @Override
+            public void run(ClassMethod method, boolean stopIfRunning) {
+                runGetty(method,stopIfRunning);
+            }
 
-    public static boolean runGetty(GettyRunner gettyRunner, ClassMethod method, boolean doDisposeGettyRunner) {
-        //We rerun the inference if the cared is in one method
-        synchronized (execService){
-            if (isGettyRunning) return false;
-            isGettyRunning=true;
-        }
-        execService.submit(() -> {
-            try {
-                if (method!=null && method.getMethodSignature()!=null)
-                    gettyRunner.run(method);
-            } catch (IOException e) {
-                log.error("Getty failed:", e);
-            } finally {
-                synchronized (execService){
-                    isGettyRunning=false;
+            @Override
+            public void stop() {
+                stopGetty();
+            }
+
+            @Override
+            public void started(ClassMethod method) {
+
+            }
+
+            @Override
+            public void cloning(String repo) {
+
+            }
+
+            @Override
+            public void cloned(Path repoHead) {
+
+            }
+
+            @Override
+            public void error(String message) {
+
+            }
+
+            @Override
+            public void headInferenceStared(ClassMethod method) {
+
+            }
+
+            @Override
+            public void currentInferenceStarted(ClassMethod method) {
+
+            }
+
+            @Override
+            public void headInferenceError(ClassMethod method, String message) {
+
+            }
+
+            @Override
+            public void currentInferenceError(ClassMethod method, String message) {
+
+            }
+
+            @Override
+            public void headInferenceDone(ClassMethod method) {
+
+            }
+
+            @Override
+            public void currentInferenceDone(ClassMethod method) {
+
+            }
+
+            @Override
+            public void done(ClassMethod method) {
+                synchronized (gettyRunner) {
+                    isGettyRunning = false;
                 }
-                if (doDisposeGettyRunner)
-                    gettyRunner.dispose();
+            }
+
+            @Override
+            public void stopped(ClassMethod method) {
+
             }
         });
+    }
+
+    public void setCurrentClassMethod(ClassMethod classMethod) {
+        if(classMethod.equals(method)) return;
+        method = classMethod;
+        methodChangePublisher.newMethod(method);
+    }
+
+    public boolean runGetty(ClassMethod method, boolean breakIfRunning) {
+        //We rerun the inference if the cared is in one method
+        boolean doRestart = false;
+        synchronized (gettyRunner){
+            if (isGettyRunning && !breakIfRunning) return false;
+            if (isGettyRunning)
+                doRestart=true;
+            isGettyRunning=true;
+        }
+        if (method!=null && method.getMethodSignature()!=null)
+            if(doRestart)
+                gettyRunner.stopAndRun(method);
+            else
+                gettyRunner.run(method);
+
         return true;
+    }
+
+    public void stopGetty() {
+        synchronized (gettyRunner){
+            if (isGettyRunning) {
+                gettyRunner.stop();
+                isGettyRunning = false;
+            }
+        }
+    }
+
+    @Override
+    public void dispose() {
+        stopGetty();
     }
 }

@@ -1,69 +1,100 @@
 package edu.ucsd;
 
-import com.intellij.AppTopics;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.command.CommandProcessor;
-import com.intellij.openapi.compiler.CompilerManager;
-import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.components.ProjectComponent;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.fileEditor.FileDocumentManagerListener;
+import com.intellij.openapi.editor.event.CaretEvent;
+import com.intellij.openapi.editor.event.CaretListener;
+import com.intellij.openapi.fileEditor.FileEditor;
+import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
+import com.intellij.openapi.fileEditor.FileEditorManagerListener;
+import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.psi.util.PsiUtil;
 import com.intellij.ui.GuiUtils;
+import com.intellij.util.messages.MessageBus;
 import edu.ucsd.getty.GettyRunner;
+import edu.ucsd.idea.CaretPositionToMethod;
 import edu.ucsd.properties.Properties;
 import edu.ucsd.properties.PropertiesService;
-import io.reactivex.disposables.Disposable;
-import javafx.application.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.*;
+import javax.xml.soap.Text;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 
 @Slf4j
-public class AutoRunInvariantsComponent implements ProjectComponent, PsiTreeChangeListener {
+public class AutoRunInvariantsComponent implements ProjectComponent, PsiTreeChangeListener, Disposable {
+    private final CaretListener myCaretMethodListener;
+    private final CaretPositionToMethod caretToMethod;
     private PropertiesService propertiesService = PropertiesService.getInstance();
-    private ScheduledExecutorService execService = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledExecutorService execService;
     private ScheduledFuture scheduledFuture;
-    private GettyRunner gettyRunner;
+    public AppState appState;
     private Project project;
     private PsiDocumentManager psiDocumentManager;
     private PsiManager psiManager;
-    private Disposable propertiesSubscription;
+    private io.reactivex.disposables.Disposable propertiesSubscription;
     private Properties properties;
-//    private Timer scheduledInference;
-//    private TimerTask scheduledInferenceTask;
+    private MyEditorManagerListener myEditorManagerListener;
+    private boolean _isDisposed = false;
+    private GettyRunNotifier gettyRunPublisher;
+
+    private final class MyEditorManagerListener implements FileEditorManagerListener {
+        @Override
+        public void selectionChanged(@NotNull FileEditorManagerEvent event) {
+            FileEditor newEditor = event.getNewEditor();
+            FileEditor oldEditor = event.getOldEditor();
+            if (oldEditor instanceof TextEditor)
+                ((TextEditor) oldEditor).getEditor().getCaretModel().removeCaretListener(myCaretMethodListener);
+            if (newEditor instanceof TextEditor)
+                ((TextEditor) newEditor).getEditor().getCaretModel().addCaretListener(myCaretMethodListener);
+        }
+    }
     public AutoRunInvariantsComponent(Project project){
-        //        scheduledInference = new Timer("AutomaticInference");
         propertiesSubscription = propertiesService.getPropertiesObservable()
                 .subscribe(p -> this.properties = p);
+        myEditorManagerListener= new MyEditorManagerListener();
         this.project=project;
         this.psiDocumentManager = PsiDocumentManager.getInstance(project);
         this.psiManager = PsiManager.getInstance(project);
         String projectPath = project.getBasePath();
-        gettyRunner = new GettyRunner(project);
+        appState = new AppState(project);
+        caretToMethod = new CaretPositionToMethod();
+
+        MessageBus messageBus = project.getMessageBus();
+        messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, myEditorManagerListener);
+        gettyRunPublisher = messageBus.syncPublisher(GettyRunNotifier.GETTY_RUN_NOTIFIER_TOPIC);
+
+        myCaretMethodListener= new CaretListener() {
+            @Override
+            public void caretPositionChanged(@NotNull CaretEvent e) {
+                ClassMethod method = caretToMethod.caretPositionChanged(e);
+                if ((method!=null) && !method.equals(appState.method)){
+                    appState.setCurrentClassMethod(method);
+                }
+            }
+        };
     }
 
     @Override
     public void projectOpened() {
-        GettyRunner.cloneRepository(project.getBasePath());
+        execService = Executors.newSingleThreadScheduledExecutor();
         psiManager.addPsiTreeChangeListener(this);
+
     }
 
     @Override
     public void projectClosed() {
         execService.shutdown();
-//        scheduledInference.cancel();
-        propertiesSubscription.dispose();
         psiManager.removePsiTreeChangeListener(this);
-        gettyRunner.dispose();
     }
+
 
     @Override
     public void beforeChildAddition(@NotNull PsiTreeChangeEvent event) {
@@ -125,7 +156,7 @@ public class AutoRunInvariantsComponent implements ProjectComponent, PsiTreeChan
                             public void run() {
                                 try {
                                     psiDocumentManager.commitAllDocuments();
-                                    psiDocumentManager.performWhenAllCommitted(() -> AppState.runGetty(gettyRunner, AppState.method));
+                                    psiDocumentManager.performWhenAllCommitted(() -> gettyRunPublisher.run(appState.method, true));
                                 } catch (Exception ex) {
                                     log.error("Error while committing docs",ex);
                                 }
@@ -145,4 +176,12 @@ public class AutoRunInvariantsComponent implements ProjectComponent, PsiTreeChan
     public void propertyChanged(@NotNull PsiTreeChangeEvent event) {
 
     }
+
+    @Override
+    public void dispose() {
+        _isDisposed = true;
+        propertiesSubscription.dispose();
+    }
+
+
 }

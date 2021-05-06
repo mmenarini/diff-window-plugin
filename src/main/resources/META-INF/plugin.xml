@@ -16,20 +16,22 @@
     </change-notes>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="183"/>
+    <idea-version since-build="193"/>
 
-    <depends>org.jetbrains.plugins.gradle</depends>
+    <depends>com.intellij.gradle</depends>
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <!-- uncomment to enable plugin in all products
     <depends>com.intellij.modules.lang</depends>
     -->
+    <depends>com.intellij.java</depends>
+    <depends>com.intellij.properties</depends>
 
-    <application-components>
-        <component>
-            <implementation-class>edu.ucsd.InitializePlugin</implementation-class>
-        </component>
-    </application-components>
+<!--    <application-components>-->
+<!--        <component>-->
+<!--            <implementation-class>edu.ucsd.InitializePlugin</implementation-class>-->
+<!--        </component>-->
+<!--    </application-components>-->
 
     <project-components>
         <component>
@@ -47,6 +49,8 @@
             <add-to-group group-id="MainMenu" anchor="last"/>
             <action class="edu.ucsd.reinfer.ReInferAction" id="DiffWindow.ReInfer" text="Re-infer"
                     description="Re-infer invariants" icon="/icons/refresh.png"/>
+            <action class="edu.ucsd.reinfer.KillInferAction" id="DiffWindow.KillInfer" text="Kill-infer"
+                    description="Kill current invariant infer" icon="/icons/close.png"/>
             <action class="edu.ucsd.properties.PropertiesAction" id="DiffWindow.Properties" text="Change Properties"
                     description="Change Properties/Settings" />
         </group>

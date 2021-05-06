@@ -1,11 +1,9 @@
 package edu.ucsd;
 
-import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.event.CaretListener;
 import com.intellij.openapi.editor.event.EditorEventMulticaster;
-import edu.ucsd.idea.CaretPositionListener;
+import edu.ucsd.idea.CaretPositionToMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.PropertyConfigurator;
 import org.jetbrains.annotations.NotNull;
@@ -21,10 +19,10 @@ public class InitializePlugin implements ApplicationComponent {
         log.warn("initializing caret listener...");
 
 //        listener
-        CaretListener caretListener = new CaretPositionListener();
-
-        EditorEventMulticaster eventMulticaster = EditorFactory.getInstance().getEventMulticaster();
-        eventMulticaster.addCaretListener(caretListener);
+//        CaretPositionToMethod caretListener = new CaretPositionToMethod();
+//
+//        EditorEventMulticaster eventMulticaster = EditorFactory.getInstance().getEventMulticaster();
+//        eventMulticaster.addCaretListener(caretListener);
 
         log.warn("created caret listener");
     }
