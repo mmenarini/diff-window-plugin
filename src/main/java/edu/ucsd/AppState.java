@@ -37,7 +37,12 @@ public class AppState implements Disposable {
 
             @Override
             public void stop() {
-                stopGetty();
+                stopGetty(false);
+            }
+
+            @Override
+            public void forceStop() {
+                stopGetty(true);
             }
 
             @Override
@@ -128,9 +133,9 @@ public class AppState implements Disposable {
         return true;
     }
 
-    public void stopGetty() {
+    public void stopGetty(boolean force) {
         synchronized (gettyRunner){
-            if (isGettyRunning) {
+            if (force || isGettyRunning) {
                 gettyRunner.stop();
                 isGettyRunning = false;
             }
@@ -139,6 +144,6 @@ public class AppState implements Disposable {
 
     @Override
     public void dispose() {
-        stopGetty();
+        stopGetty(true);
     }
 }

@@ -1,16 +1,19 @@
 package edu.ucsd.getty;
 
+import com.intellij.openapi.progress.PerformInBackgroundOption;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBus;
-import edu.ucsd.AppState;
 import edu.ucsd.ClassMethod;
 import edu.ucsd.GettyRunNotifier;
-import edu.ucsd.MethodChangeNotifier;
 import edu.ucsd.mmenarini.getty.GettyMainKt;
 import edu.ucsd.properties.Properties;
 import edu.ucsd.properties.PropertiesService;
 import io.reactivex.disposables.Disposable;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,13 +32,11 @@ import java.util.concurrent.TimeUnit;
 public class GettyRunner implements com.intellij.openapi.Disposable {
     private final ExecutorService execService = Executors.newFixedThreadPool(4);
     private final GettyRunNotifier gettyRunPublisher;
-    private PropertiesService propertiesService = PropertiesService.getInstance();
-    private Disposable propertiesSubscription;
+    private final PropertiesService propertiesService = PropertiesService.getInstance();
+    private final Disposable propertiesSubscription;
     private Properties properties;
-    private String gettyPath;
-    private String pythonPath;
-    private String projectBasePath;
-    private Project project;
+    private final String projectBasePath;
+    private final Project project;
     private Process gradleProcess=null;
     private Future<?> gettyFuture=null;
     private Path headRepoDir=null;
@@ -69,74 +70,113 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
     }
 
     private void do_run(ClassMethod method) {
-        gettyRunPublisher.started(method);
-        if (properties.isRemoveWorkBeforeRunning() && Files.exists(headRepoDir)){
-            try {
-                Files.walkFileTree(headRepoDir,
-                    new SimpleFileVisitor<Path>() {
-                        @Override
-                        public FileVisitResult postVisitDirectory(
-                                Path dir, IOException exc) throws IOException {
-                            try {
-                                Files.delete(dir);
-                            } catch(Throwable t) {}
-                            return FileVisitResult.CONTINUE;
-                        }
-
-                        @Override
-                        public FileVisitResult visitFile(
-                                Path file, BasicFileAttributes attrs)
-                                throws IOException {
-                            try {
-                                Files.delete(file);
-                            } catch(Throwable t) {}
-                            return FileVisitResult.CONTINUE;
-                        }
-                    });
-            } catch (IOException e) {
-                gettyRunPublisher.error(e.getMessage());
-            }
-        }
-
-        cloneRepository(projectBasePath);
-
-        //TODO change to a config option
-        String daikonDir = System.getenv("DAIKONDIR");
-        Path daikonJar=null;
-        if (daikonDir!=null)
-            daikonJar = Paths.get(daikonDir).resolve("daikon.jar");
-        String daikonJarPath = null;
-        if (daikonJar!=null && Files.exists(daikonJar))
-            daikonJarPath = daikonJar.toAbsolutePath().toString();
-        Path invCacheFile=GettyInvariantsFilesRetriever.getHeadRepoCachedInvariantFilePath(method, headRepoDir);
-        if (Files.notExists(invCacheFile)) {
-            try {
-                gettyRunPublisher.headInferenceStared(method);
-                runGradleInvariants(method.getMethodSignature(), headRepoDir, daikonJarPath);
-                Path invFile = GettyInvariantsFilesRetriever.getHeadRepoInvariantFilePath(method,headRepoDir);
-                if (Files.notExists(invFile)) {
-                    String msg = String.format("Invariant file {} for method {} does not exist.", invFile.toString(), method.toString());
-                    log.error("Invariant file {} for method {} does not exist.", invFile.toString(), method.toString());
-                    throw new IllegalStateException(msg);
-                } else {
-                    //Cache the file
-                    invCacheFile.getParent().toFile().mkdirs();
-                    Files.copy(invFile, invCacheFile);
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Running invariants inference...", false, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
+            @Override
+            public void onCancel() {
+                if (project != null) {
+                        project.getMessageBus().syncPublisher(GettyRunNotifier.GETTY_RUN_NOTIFIER_TOPIC).forceStop();
                 }
-                gettyRunPublisher.headInferenceDone(method);
-            } catch(IllegalStateException | IOException e) {
-                log.error("Did not complete GETTY successfully on the HEAD repo.");
-                gettyRunPublisher.headInferenceError(method, e.getMessage());
             }
-        }
-        try {
-            gettyRunPublisher.currentInferenceStarted(method);
-            runGradleInvariants(method.getMethodSignature(), Paths.get(projectBasePath), daikonJarPath);
-            gettyRunPublisher.currentInferenceDone(method);
-        } catch(IllegalStateException e) {
-            log.error("Did not complete GETTY successfully on the current code.");
-            gettyRunPublisher.currentInferenceError(method, e.getMessage());
-        }
+            //boolean running;
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+/*                running = true;
+                execService.submit(() -> {
+                    while(!indicator.isCanceled()) {
+                        indicator.checkCanceled();
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });*/
+                indicator.setIndeterminate(false);
+                indicator.setFraction(0);
+                indicator.setText("Started");
+                gettyRunPublisher.started(method);
+                if (properties.isRemoveWorkBeforeRunning() && Files.exists(headRepoDir)){
+                    indicator.setText("Removing repo files");
+                    try {
+                        Files.walkFileTree(headRepoDir,
+                                new SimpleFileVisitor<Path>() {
+                                    @Override
+                                    public FileVisitResult postVisitDirectory(
+                                            Path dir, IOException exc) throws IOException {
+                                        try {
+                                            Files.delete(dir);
+                                        } catch(Throwable ignored) {}
+                                        return FileVisitResult.CONTINUE;
+                                    }
+
+                                    @Override
+                                    public FileVisitResult visitFile(
+                                            Path file, BasicFileAttributes attrs)
+                                            throws IOException {
+                                        try {
+                                            Files.delete(file);
+                                        } catch(Throwable t) {}
+                                        return FileVisitResult.CONTINUE;
+                                    }
+                                });
+                    } catch (IOException e) {
+                        gettyRunPublisher.error(e.getMessage());
+                    }
+                }
+                indicator.setFraction(0.1);
+                indicator.setText("Cloning Repository");
+
+                cloneRepository(projectBasePath);
+
+                //TODO change to a config option
+                String daikonDir = System.getenv("DAIKONDIR");
+                Path daikonJar=null;
+                if (daikonDir!=null)
+                    daikonJar = Paths.get(daikonDir).resolve("daikon.jar");
+                String daikonJarPath = null;
+                if (daikonJar!=null && Files.exists(daikonJar))
+                    daikonJarPath = daikonJar.toAbsolutePath().toString();
+                Path invCacheFile=GettyInvariantsFilesRetriever.getHeadRepoCachedInvariantFilePath(method, headRepoDir);
+                if (Files.notExists(invCacheFile)) {
+                    try {
+                        indicator.setFraction(0.4);
+                        indicator.setText("Running inference on head repository");
+
+                        gettyRunPublisher.headInferenceStared(method);
+                        runGradleInvariants(method.getMethodSignature(), headRepoDir, daikonJarPath);
+                        Path invFile = GettyInvariantsFilesRetriever.getHeadRepoInvariantFilePath(method,headRepoDir);
+                        assert invFile != null;
+                        if (Files.notExists(invFile)) {
+                            String msg = String.format("Invariant file %s for method %s does not exist.", invFile, method);
+                            log.error(msg);
+                            throw new IllegalStateException(msg);
+                        } else {
+                            //Cache the file
+                            invCacheFile.getParent().toFile().mkdirs();
+                            Files.copy(invFile, invCacheFile);
+                        }
+                        gettyRunPublisher.headInferenceDone(method);
+                    } catch(IllegalStateException | IOException e) {
+                        log.error("Did not complete GETTY successfully on the HEAD repo.");
+                        gettyRunPublisher.headInferenceError(method, e.getMessage());
+                    }
+                }
+                try {
+                    indicator.setFraction(0.6);
+                    indicator.setText("Running inference on current program");
+                    gettyRunPublisher.currentInferenceStarted(method);
+                    runGradleInvariants(method.getMethodSignature(), Paths.get(projectBasePath), daikonJarPath);
+                    gettyRunPublisher.currentInferenceDone(method);
+                    indicator.setText("Done");
+                } catch(IllegalStateException e) {
+                    log.error("Did not complete GETTY successfully on the current code.");
+                    gettyRunPublisher.currentInferenceError(method, e.getMessage());
+                    indicator.setText("Error: "+e.getMessage());
+                }
+                indicator.setFraction(1);
+                //running=false;
+            }
+        });
     }
 
     public Future<?> stopAndRun(ClassMethod method) {
@@ -162,7 +202,8 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
                     if (gradleProcess.isAlive())
                         gradleProcess.destroyForcibly();
                 }
-                try {
+                //Can't do this because it would kill my intellij while debugging
+                /*try {
                     ProcessBuilder builder = new ProcessBuilder();
                     List<String> commandsList = getSystemGradlew();
                     commandsList.add("--stop");
@@ -175,12 +216,31 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
                     execService.submit(new Logger(stdError));
                     gradleKillProcess.waitFor();
                 } catch (IOException e) {
-                    log.error("IOExcepion {}", e);
+                    log.error("IOExcepion {0}", e);
                     throw new IllegalStateException("IO Excepion " + e.getLocalizedMessage());
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                }
+                }*/
 
+            }
+            // Kill test process if running with
+            // taskkill /F /IM "gettyJava.exe" /T
+            try {
+                ProcessBuilder builder = new ProcessBuilder();
+                List<String> commandsList = new LinkedList<>();
+                commandsList.add("taskkill");
+                commandsList.add("/F");
+                commandsList.add("/IM");
+                commandsList.add("\"gettyJava.exe\"");
+                commandsList.add("/T");
+                builder.command(commandsList);
+                Process gettyJavaKillProcess = builder.start();
+                gettyJavaKillProcess.waitFor();
+            } catch (IOException e) {
+                log.error("IOExcepion {0}", e);
+                throw new IllegalStateException("IO Excepion " + e.getLocalizedMessage());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
             runningGradle = false;
         }
@@ -208,6 +268,7 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
     private void runGradleInvariants(String methodSignature, Path repoDir, String daikonJarPath) {
         ProcessBuilder builder = new ProcessBuilder();
         List<String> commandsList = getSystemGradlew();
+        commandsList.add("--no-daemon");
         if (properties.isCleanBeforeRunning())
             commandsList.add("clean");
         else {
@@ -256,10 +317,10 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
                 throw new IllegalStateException("The csi script exited with value " + gradleProcess.exitValue());
             }
         } catch (InterruptedException e) {
-            log.error("Interrupted {}", e);
+            log.error("Interrupted {0}", e);
             //throw new IllegalStateException("Interrupted Excepion " + e.getLocalizedMessage());
         } catch (IOException e) {
-            log.error("IOExcepion {}", e);
+            log.error("IOExcepion {0}", e);
             throw new IllegalStateException("IO Excepion " + e.getLocalizedMessage());
         } finally {
             synchronized (execService){
@@ -271,7 +332,7 @@ public class GettyRunner implements com.intellij.openapi.Disposable {
 
     private void logProcessErrorOutput(Process p, String cmd, BufferedReader stdError) {
         log.error("Error running {}", cmd);
-        String s = null;
+        String s;
         try{
         while ((s = stdError.readLine()) != null)
             log.error(s);

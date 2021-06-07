@@ -9,6 +9,7 @@ public interface GettyRunNotifier {
         void run();
         void run(ClassMethod method, boolean stopIfRunning);
         void stop();
+        void forceStop();
         void started(ClassMethod method);
         void cloning(String repo);
         void cloned(Path repoHead);

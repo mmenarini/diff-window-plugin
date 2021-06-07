@@ -16,7 +16,7 @@ public class KillInferAction extends AnAction {
     public void actionPerformed(AnActionEvent event) {
         Project project = event.getProject();
         if (project != null) {
-            project.getMessageBus().syncPublisher(GettyRunNotifier.GETTY_RUN_NOTIFIER_TOPIC).stop();
+            project.getMessageBus().syncPublisher(GettyRunNotifier.GETTY_RUN_NOTIFIER_TOPIC).forceStop();
         }
     }
 }

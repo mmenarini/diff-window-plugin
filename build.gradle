@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'org.jetbrains.intellij' version '0.7.2'
     id "io.freefair.lombok" version "5.3.3.3"
-    id "org.jetbrains.kotlin.jvm" version "1.4.32"
+    id "org.jetbrains.kotlin.jvm" version "1.5.10"
 }
 
 group 'edu.ucsd'
@@ -44,7 +44,7 @@ intellij {
                "properties"]
 }
 tasks.wrapper {
-    gradleVersion = "6.8.3"
+    gradleVersion = "6.7.1"
 }
 patchPluginXml {
     version "0.1.1"

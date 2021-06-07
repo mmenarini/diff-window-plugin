@@ -88,6 +88,11 @@ public class DiffWindowContentManager {
             }
 
             @Override
+            public void forceStop() {
+
+            }
+
+            @Override
             public void started(ClassMethod method) {
 
             }
